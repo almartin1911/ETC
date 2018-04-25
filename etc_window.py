@@ -6,10 +6,10 @@ from gi.repository import Gtk, Gdk
 
 
 class ETC_Window(Gtk.ApplicationWindow):
-    def __init__(self, app_name):
+    def __init__(self, app_name, controller):
         # App data
         win_title = "ETC"
-        win_subtitle = "v0.1"
+        win_subtitle = "v0.2.1"
 
         # Init window and headerbar
         Gtk.Window.__init__(self)
@@ -41,5 +41,5 @@ class ETC_Window(Gtk.ApplicationWindow):
         # Attaching hpaned to grid
         grid.attach(hpaned, 0, 1, 1, 1)
         # Adding panes to hpaned
-        hpaned.add1(lpane.ETC_Window_lpane())
+        hpaned.add1(lpane.ETC_Window_lpane(controller))
         hpaned.add2(rpane.ETC_Window_rpane())
