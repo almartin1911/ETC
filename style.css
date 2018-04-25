@@ -1,0 +1,11 @@
+infobar.info {
+    background-color: #8ea604;
+}
+
+infobar.warning{
+    background-color: #f5bb00;
+}
+
+infobar.error{
+    background-color: #bf3100;
+}

@@ -21,6 +21,12 @@ class ETC_Window(Gtk.ApplicationWindow):
         headerbar.props.subtitle = win_subtitle
         self.set_titlebar(headerbar)
 
+        # Setting up the style from a css file
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_path("style.css")
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(),
+                        css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
         # A Gtk.Grid as main container
         grid = Gtk.Grid()
         # Adding grid to window
@@ -28,8 +34,8 @@ class ETC_Window(Gtk.ApplicationWindow):
 
         # A Gtk.InfoBar as top statusbar
         self.infobar = Gtk.InfoBar()
-        self.infobar.set_message_type(Gtk.MessageType.INFO)
-        infobar_label = Gtk.Label()
+        self.infobar.set_message_type(Gtk.MessageType.WARNING)
+        infobar_label = Gtk.Label("Barra de estado")
         infobar_content = self.infobar.get_content_area()
         infobar_content.add(infobar_label)
         # Attaching infobar to grid
