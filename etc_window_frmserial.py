@@ -6,7 +6,7 @@ from gi.repository import Gtk, Gio
 class ETC_window_frmserial(Gtk.Frame):
     def __init__(self, controller):
         Gtk.Frame.__init__(self)
-        self.set_label("Serial")
+        self.set_label("Conexión Serial")
 
         self.controller = controller
 
@@ -14,11 +14,11 @@ class ETC_window_frmserial(Gtk.Frame):
         self.add(grid)
 
         self.cbox_ports = Gtk.ComboBox()
-        self.controller.load_ports(self.cbox_ports)
-        self.cbox_ports.connect("changed", self.on_cbox_ports_changed)
         renderer_text = Gtk.CellRendererText()
         self.cbox_ports.pack_start(renderer_text, True)
         self.cbox_ports.add_attribute(renderer_text, "text", 0)
+        self.controller.load_ports(self.cbox_ports)
+        self.cbox_ports.connect("changed", self.on_cbox_ports_changed)
         grid.attach(self.cbox_ports, 0, 0, 2, 1)
 
         btn_refresh = Gtk.Button()
