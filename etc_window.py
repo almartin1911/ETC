@@ -24,8 +24,9 @@ class ETC_Window(Gtk.ApplicationWindow):
         # Setting up the style from a css file
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path("style.css")
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(),
-                        css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         # A Gtk.Grid as main container
         grid = Gtk.Grid()

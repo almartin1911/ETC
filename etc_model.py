@@ -1,4 +1,3 @@
-from sqlalchemy import create_engine  # Used on etc_controller
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session

@@ -1,5 +1,6 @@
 import etc_serial
 import etc_model
+from sqlalchemy import create_engine
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -45,7 +46,7 @@ class ETC_controller():
     def connect_to_database(self):
         db_path = "sqlite:///etc_database.db"
         # echo=True for debugging purposes
-        engine = etc_model.create_engine(db_path, encoding="utf-8", echo=True)
+        engine = create_engine(db_path, encoding="utf-8", echo=True)
         etc_model.init_model(engine)
         db_session = etc_model.DBSession()
         self.setup_database(engine)
