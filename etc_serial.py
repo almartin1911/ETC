@@ -1,3 +1,4 @@
+# TODO: sudo usermod -a -G dialout $USER
 import serial
 import sys
 import glob

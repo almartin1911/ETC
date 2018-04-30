@@ -1,5 +1,6 @@
 import etc_window_frmserial as frmserial
 import etc_window_frmparameters as frmparameters
+import etc_window_frmcommands as frmcommands
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -14,3 +15,6 @@ class ETC_Window_lpane(Gtk.Grid):
 
         frame_parameters = frmparameters.ETC_window_frmparameters(controller)
         self.attach(frame_parameters, 0, 1, 1, 1)
+
+        frame_commands = frmcommands.ETC_window_frmcommands(controller)
+        self.attach(frame_commands, 0, 2, 1, 1)

@@ -14,17 +14,17 @@ class ETC_controller():
     # /////////////// Serial ///////////////
     def get_available_serial_ports(self):
         ports = self.arduino.list_serial_ports()
-        store_ports = Gtk.ListStore(str)
+        ports_store = Gtk.ListStore(str)
 
         for i in ports:
-            store_ports.append([i])
+            ports_store.append([i])
 
-        return store_ports
+        return ports_store
 
     def load_ports(self, cbox):
         # Loading and setting a data model for the cbox
-        store_ports = self.get_available_serial_ports()
-        cbox.set_model(store_ports)
+        ports_store = self.get_available_serial_ports()
+        cbox.set_model(ports_store)
         cbox.set_active(0)
 
         self.set_port(cbox)
@@ -57,16 +57,16 @@ class ETC_controller():
     def get_parameters(self):
         # Querying the db trough db_session
         parameters = self.db_session.query(etc_model.Parameter).all()
-        store_parameters = Gtk.ListStore(str, str, str)
+        parameters_store = Gtk.ListStore(str, str, str)
 
-        # Populating store_parameters
+        # Populating parameters_store
         default_value = "0"
         for parameter in parameters:
             symbol = parameter.symbol
             unit = parameter.unit
-            store_parameters.append([symbol, default_value, unit])
+            parameters_store.append([symbol, default_value, unit])
 
-        return store_parameters
+        return parameters_store
 
     def setup_load_parameters(self, treeview):
         # Setting headings and a text renderer for each column
@@ -77,5 +77,36 @@ class ETC_controller():
             treeview.append_column(column)
 
         # Loading and setting a model for the treeview
-        store_parameters = self.get_parameters()
-        treeview.set_model(store_parameters)
+        parameters_store = self.get_parameters()
+        treeview.set_model(parameters_store)
+
+    # /////////////// Commands ///////////////
+    def get_commands(self):
+        commands = self.db_session.query(etc_model.Command).all()
+        return commands
+
+    def load_commands(self, flowbox):
+        commands_list = self.get_commands()
+
+        for command in commands_list:
+            button = Gtk.Button()
+            button.set_label(command.name)
+            button.connect("clicked",
+                           self.on_btn_command_clicked,
+                           command)
+            flowbox.add(button)
+
+    def on_btn_command_clicked(self, button, command):
+        print(command)  # command is an object
+        # TODO: Check command.command type in db
+        command = int(command.command)
+        raw_command = command.command.encode('utf-8')
+        print(raw_command)
+        try:
+            self.arduino.write(raw_command)
+            # FIXME: FOUND THE FAQIN' BUG!!!
+            # while self.arduino.is_open:
+            #     if self.arduino.in_waiting > 0:
+            #         print(self.arduino.read())
+        except Exception as e:
+            print(e)
