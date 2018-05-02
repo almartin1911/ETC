@@ -6,7 +6,8 @@ import glob
 
 class ETC_Serial(serial.Serial):
     def __init__(self):
-        serial.Serial.__init__(self)
+        super(ETC_Serial, self).__init__()
+        # serial.Serial.__init__(self)
 
     def check_connection(self):
         return True if self.is_open else False

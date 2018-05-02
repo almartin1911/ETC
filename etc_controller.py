@@ -97,16 +97,56 @@ class ETC_controller():
             flowbox.add(button)
 
     def on_btn_command_clicked(self, button, command):
-        print(command)  # command is an object
-        # TODO: Check command.command type in db
-        command = int(command.command)
-        raw_command = command.command.encode('utf-8')
-        print(raw_command)
-        try:
-            self.arduino.write(raw_command)
-            # FIXME: FOUND THE FAQIN' BUG!!!
-            # while self.arduino.is_open:
-            #     if self.arduino.in_waiting > 0:
-            #         print(self.arduino.read())
-        except Exception as e:
-            print(e)
+        print(command)  # command is an object!
+
+        str_command = command.command
+        bytes_str_command = bytes.fromhex(str_command)
+
+        self.arduino.write(bytes_str_command)
+        print("Command sent:", bytes_str_command)
+
+        # try:
+        #     self.arduino.write(raw_command)
+        #     # FIXME: FOUND THE FAQIN' BUG!!!
+        #     # while self.arduino.is_open:
+        #     #     if self.arduino.in_waiting > 0:
+        #     #         print(self.arduino.read())
+        # except Exception as e:
+        #     print(e)
+
+    def read_data_from_serial(self):
+        header = b'\xd1'
+
+        package = b''
+
+        package_counter = 0
+        buffer_size = 32
+        package_pointer = 0
+
+        is_header = False
+        first_time_header = False
+
+        while self.arduino.in_waiting > 0:
+            print(self.arduino.in_waiting)
+            received_byte = self.arduino.read()
+
+            if received_byte == header:
+                if not first_time_header:
+                    is_header = True
+                    package_pointer = 0
+                    first_time_header = True
+
+            package += received_byte
+            package_pointer += 1
+
+            if package_pointer > buffer_size:
+                package_pointer = 0
+
+                if is_header:
+                    package_counter += 1
+                    print(package_counter, package)
+
+                    package = b''
+
+                    is_header = False
+                    first_time_header = False
