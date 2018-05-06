@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ea0e8f75560b65de01361e08fadb3e94f28b5fa5f83602a79defbf3571111d93"
+            "sha256": "36ff572e8199ad05521b332f1434e98e5470a81d625e926b13320fc6a2ebcf25"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,13 @@
         ]
     },
     "default": {
+        "bitstring": {
+            "hashes": [
+                "sha256:c163a86fcef377c314690051885d86b47419e3e1770990c212e16723c1c08faa"
+            ],
+            "index": "pypi",
+            "version": "==3.1.5"
+        },
         "pycairo": {
             "hashes": [
                 "sha256:cdd4d1d357325dec3a21720b85d273408ef83da5f15c184f2eff3212ff236b9f"
@@ -37,6 +44,14 @@
             ],
             "index": "pypi",
             "version": "==3.4"
+        },
+        "pyserial-asyncio": {
+            "hashes": [
+                "sha256:861d975029498e777a67c6d6d392e20b84a79c01608f3778c978d0106467c8f8",
+                "sha256:c40677a8874d8c24d4423a97498746de776f6dbcd0efbb8fa43dcf011a589aee"
+            ],
+            "index": "pypi",
+            "version": "==0.4"
         },
         "sqlalchemy": {
             "hashes": [

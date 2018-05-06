@@ -8,6 +8,8 @@ pycairo = "*"
 pygobject = "*"
 pyserial = "*"
 sqlalchemy = "*"
+pyserial-asyncio = "*"
+bitstring = "*"
 
 [dev-packages]
 
