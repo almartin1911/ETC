@@ -54,6 +54,7 @@ class ETC_window_frmserial(Gtk.Frame):
             # controller.start_read_thread(self.arduino,
             #                              self.tree_view_parameters)
             print(self.controller.arduino)
+            self.controller.start_read_thread()
         else:
             print('Switch OFF')
             self.controller.arduino.close_port()

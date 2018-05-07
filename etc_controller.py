@@ -1,3 +1,6 @@
+import sys
+import bitstring
+import threading
 import etc_serial
 import etc_model
 from sqlalchemy import create_engine
@@ -105,19 +108,16 @@ class ETC_controller():
         self.arduino.write(bytes_str_command)
         print("Command sent:", bytes_str_command)
 
-        # try:
-        #     self.arduino.write(raw_command)
-        #     # FIXME: FOUND THE FAQIN' BUG!!!
-        #     # while self.arduino.is_open:
-        #     #     if self.arduino.in_waiting > 0:
-        #     #         print(self.arduino.read())
-        # except Exception as e:
-        #     print(e)
+    # /////////////// Read data ///////////////
+    def start_read_thread(self):
+        read_thread = threading.Thread(target=self.read_data_from_serial)
+
+        read_thread.start()
 
     def read_data_from_serial(self):
         header = b'\xd1'
 
-        package = b''
+        package = bytearray()
 
         package_counter = 0
         buffer_size = 32
@@ -126,27 +126,32 @@ class ETC_controller():
         is_header = False
         first_time_header = False
 
-        while self.arduino.in_waiting > 0:
-            print(self.arduino.in_waiting)
+        while True:
+            # while arduino.in_waiting > 0: BUG: CAUSES 100% CPU CONSUMPTION
             received_byte = self.arduino.read()
+            # print(package_pointer, received_byte, end=", ")
 
             if received_byte == header:
                 if not first_time_header:
                     is_header = True
                     package_pointer = 0
                     first_time_header = True
+                    package = bytearray()
 
-            package += received_byte
+            int_received_byte = int.from_bytes(received_byte,
+                                               byteorder=sys.byteorder)
+            package.append(int_received_byte)
             package_pointer += 1
 
-            if package_pointer > buffer_size:
+            if package_pointer >= buffer_size:
                 package_pointer = 0
 
                 if is_header:
+                    bitstream_package = bitstring.BitStream(package)
                     package_counter += 1
-                    print(package_counter, package)
-
-                    package = b''
+                    # print(package_counter, package)
+                    print('#', package_counter, ':', bitstream_package,
+                          len(bitstream_package))
 
                     is_header = False
                     first_time_header = False
