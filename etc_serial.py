@@ -1,4 +1,4 @@
-# TODO: sudo usermod -a -G dialout $USER
+# TODO: On linux: sudo usermod -a -G dialout $USER
 import serial
 import sys
 import glob
@@ -34,16 +34,9 @@ class ETC_Serial(serial.Serial):
         else:
             print("Nothing to disconnect")
 
-    '''
-    A fork of: https://stackoverflow.com/questions/12090503/
-    listing-available-com-ports-with-python
-    Original Author: https://stackoverflow.com/users/300783/thomas
-
-    Successfully tested on:
-    Windows 8.1 x64, Windows 10 x64
-    Mac OS X 10.9.x / 10.10.x / 10.11.x
-    Ubuntu 14.04 / 14.10 / 15.04 / 15.10 / 17.04 with both Python2 and Python3.
-    '''
+    # fork of:
+    # https://stackoverflow.com/questions/12090503/listing-available-com-ports
+    # -with-python
 
     def list_serial_ports(self):
         """ Lists serial port names (cross-platform)
