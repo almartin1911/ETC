@@ -2,6 +2,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 
+from datetime import datetime
+
 maker = sessionmaker(autoflush=True, autocommit=False)
 DBSession = scoped_session(maker)
 
@@ -123,3 +125,17 @@ class Parameter_record(Base):
         result = f"<Parameter_record(value='{self.value}', "
         result += f"datetime='{self.datetime}')>"
         return result
+
+
+def add_record(session, raw_data, command, user_exec):
+    record = Record()
+    record.raw_data = raw_data
+    record.datetime = datetime.now()
+
+    record.command = command
+    record.user_exec = user_exec
+
+    session.add(record)
+    session.commit()
+
+    return record

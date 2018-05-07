@@ -126,7 +126,7 @@ class ETC_controller():
         is_header = False
         first_time_header = False
 
-        while True:
+        while self.arduino.is_open:
             # while arduino.in_waiting > 0: BUG: CAUSES 100% CPU CONSUMPTION
             received_byte = self.arduino.read()
             # print(package_pointer, received_byte, end=", ")
@@ -147,11 +147,25 @@ class ETC_controller():
                 package_pointer = 0
 
                 if is_header:
-                    bitstream_package = bitstring.BitStream(package)
+                    # bitstream_package = bitstring.BitStream(package)
                     package_counter += 1
+                    self.handle_package(package_counter, package)
                     # print(package_counter, package)
-                    print('#', package_counter, ':', bitstream_package,
-                          len(bitstream_package))
+                    # print('#', package_counter, ':', bitstream_package,
+                          # len(bitstream_package))
 
                     is_header = False
                     first_time_header = False
+
+    def handle_package(self, package_counter, package):
+        bitstream_package = bitstring.BitStream(package)
+        print('#', package_counter, ':', bitstream_package,
+              len(bitstream_package))
+
+        # TODO: Real management of commands and users
+        # BUG: SQLAlchemy works on one thread only
+        # command = self.db_session.query(etc_model.Command).first()
+        # user_exec = self.db_session.query(etc_model.User).first()
+
+        # etc_model.add_record(self.session, bitstream_package.hex,
+        #                      command, user_exec)
