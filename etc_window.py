@@ -9,7 +9,7 @@ class ETC_Window(Gtk.ApplicationWindow):
     def __init__(self, app_name, controller):
         # App data
         win_title = "ETC"
-        win_subtitle = "v0.2.1"
+        win_subtitle = "v0.2.5"
 
         # Init window and headerbar
         Gtk.Window.__init__(self)
