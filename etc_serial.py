@@ -4,16 +4,16 @@ import sys
 import glob
 
 
-class ETC_Serial(serial.Serial):
-    def __init__(self):
-        super(ETC_Serial, self).__init__()
+class Serial(serial.Serial):
+    def __init__(self, **kw):
+        super(Serial, self).__init__(**kw)
         # serial.Serial.__init__(self)
 
-    def check_connection(self):
-        return True if self.is_open else False
+    # def check_connection(self):
+    #     return True if self.is_open else False
 
     def open_port(self):
-        if self.check_connection():
+        if self.is_open:
             print("Already connected")
         else:
             # Opening connection
@@ -24,7 +24,7 @@ class ETC_Serial(serial.Serial):
                     print(e)
 
     def close_port(self):
-        if self.check_connection():
+        if self.is_open:
             # Closing connection
             try:
                 self.close()
