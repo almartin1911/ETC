@@ -1,8 +1,7 @@
-import pt_model as m
-import pt_view as v
-import pt_controller as c
-
+import pt_gtkapplication
+import sys
 
 if __name__ == '__main__':
-    c.Controller(m.Model(), v.View())
-    v.Gtk.main()
+    app = pt_gtkapplication.Application()
+    exit_status = app.run(sys.argv)
+    sys.exit(exit_status)

@@ -3,7 +3,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GObject
 
 
-class View(Gtk.Window):
+class View(Gtk.ApplicationWindow):
     BUTTON_PAGE = 'button'
     GREETING_PAGE = 'greeting'
 
