@@ -21,7 +21,7 @@ def setup_database(engine):
 
 
 def connect_to_database():
-    db_path = "sqlite:///etc_database.db"
+    db_path = "sqlite:///etc_database.db?check_same_thread=False"
     # echo=True for debugging purposes
     engine = create_engine(db_path, encoding="utf-8", echo=True)
     init_model(engine)

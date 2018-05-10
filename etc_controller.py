@@ -185,10 +185,9 @@ class Controller(object):
         print('#', package_counter, ':', bitstream_package,
               len(bitstream_package))
 
-        # TODO: Real management of commands and users
-        # BUG: SQLAlchemy works on one thread only
-        # command = self.db_session.query(etc_model.Command).first()
-        # user_exec = self.db_session.query(etc_model.User).first()
-        #
-        # etc_model.add_record(self.session, bitstream_package.hex,
-        #                      command, user_exec)
+        # TODO: Real management of commands and users        
+        command = self._db_session.query(self._model.Command).first()
+        user_exec = self._db_session.query(self._model.User).first()
+
+        self._model.add_record(self._db_session, bitstream_package.hex,
+                               command, user_exec)
