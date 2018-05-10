@@ -3,16 +3,14 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 
-class ETC_window_frmparameters(Gtk.Frame):
-    def __init__(self, controller):
-        Gtk.Frame.__init__(self)
+class Lpane_frameparameters(Gtk.Frame):
+    def __init__(self):
+        super(Lpane_frameparameters, self).__init__()
         self.set_label("Parámetros")
 
-        self.controller = controller
+        self._grid = Gtk.Grid()
+        self.add(self._grid)
 
-        grid = Gtk.Grid()
-        self.add(grid)
-
-        self.tv_parameters = Gtk.TreeView()
-        self.controller.setup_load_parameters(self.tv_parameters)
-        grid.attach(self.tv_parameters, 0, 0, 1, 1)
+        self._tv_parameters = Gtk.TreeView()
+        # self.controller.setup_load_parameters(self.tv_parameters)
+        self._grid.attach(self._tv_parameters, 0, 0, 1, 1)
