@@ -21,7 +21,7 @@ class Lpane_frameserial(Gtk.Frame):
         renderer_text = Gtk.CellRendererText()
         self._cbox_ports.pack_start(renderer_text, True)
         self._cbox_ports.add_attribute(renderer_text, "text", 0)
-        self._cbox_ports.connect("changed", self.on_cbox_ports_changed)
+        self._cbox_ports.connect("changed", self._on_cbox_ports_changed)
         self._grid.attach(self._cbox_ports, 0, 0, 2, 1)
 
         self._btn_refresh = Gtk.Button()
@@ -44,7 +44,7 @@ class Lpane_frameserial(Gtk.Frame):
         self._btn_config.set_image(config_image)
         self._grid.attach(self._btn_config, 2, 1, 1, 1)
 
-    def on_cbox_ports_changed(self, cbox):
+    def _on_cbox_ports_changed(self, cbox):
         self.emit('cbox-ports-changed')
 
     def _on_btn_refresh_clicked(self, button):

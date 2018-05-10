@@ -10,5 +10,3 @@ class Lpane_framecommands(Gtk.Frame):
 
         self._flowbox = Gtk.FlowBox()
         self.add(self._flowbox)
-
-        # controller.load_commands(flowbox)

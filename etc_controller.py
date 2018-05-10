@@ -175,12 +175,12 @@ class Controller(object):
 
                 if is_header:
                     package_counter += 1
-                    self.handle_package(package_counter, package)
+                    self._handle_package(package_counter, package)
 
                     is_header = False
                     first_time_header = False
 
-    def handle_package(self, package_counter, package):
+    def _handle_package(self, package_counter, package):
         bitstream_package = bitstring.BitStream(package)
         print('#', package_counter, ':', bitstream_package,
               len(bitstream_package))
