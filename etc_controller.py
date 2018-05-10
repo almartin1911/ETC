@@ -32,7 +32,7 @@ class Controller(object):
                                    self._on_btn_refresh_clicked)
         self._frame_serial.connect('cbox-ports-changed',
                                    self._on_cbox_ports_changed)
-        self._frame_serial.connect('notify::active',
+        self._frame_serial.connect('switch-serial-toggled',
                                    self._on_switch_serial_toggled)
 
         self._view.show_all()
@@ -47,8 +47,8 @@ class Controller(object):
         print('Cbox ports changed')
         self._set_port()
 
-    def _on_switch_serial_toggled(self, switch, state):
-            if self._frame_serial._switch_serial.get_active():
+    def _on_switch_serial_toggled(self, widget, active):
+            if active is True:
                 print('Switch ON')
                 self._arduino.open_port()
                 self._read_thread.start()

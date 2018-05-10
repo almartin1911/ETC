@@ -7,7 +7,7 @@ class Lpane_frameserial(Gtk.Frame):
     __gsignals__ = {
         'btn-refresh-clicked': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'cbox-ports-changed': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'notify::active': (GObject.SIGNAL_RUN_FIRST, None, ())
+        'switch-serial-toggled': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
     }
 
     def __init__(self):
@@ -34,7 +34,7 @@ class Lpane_frameserial(Gtk.Frame):
 
         self._switch_serial = Gtk.Switch()
         self._switch_serial.connect("notify::active",
-                                    self.on_switch_serial_toggled)
+                                    self._on_switch_serial_toggled)
         self._grid.attach(self._switch_serial, 0, 1, 2, 1)
 
         self._btn_config = Gtk.Button()
@@ -50,5 +50,5 @@ class Lpane_frameserial(Gtk.Frame):
     def _on_btn_refresh_clicked(self, button):
         self.emit('btn-refresh-clicked')
 
-    def on_switch_serial_toggled(self, switch, state):
-        self.emit('notify::active', state)
+    def _on_switch_serial_toggled(self, switch, pspec):
+        self.emit('switch-serial-toggled', switch.get_active())
