@@ -1,3 +1,4 @@
+# https://stackoverflow.com/q/50258880/6472895
 import sys
 import gi
 gi.require_version('Gtk', '3.0')
@@ -24,13 +25,13 @@ class Controller(object):
         self._model = model
         self._view = view
 
-        self._view.connect('notify::active',
+        self._view.connect('switch-serial-toggled',
                            self._on_switch_serial_toggled)
 
         self._view.show_all()
 
-    def _on_switch_serial_toggled(self, switch, state):
-            if self._view._switch_serial.get_active():
+    def _on_switch_serial_toggled(self, widget, active):
+            if active:
                 print('Switch ON')
             else:
                 print('Switch OFF')
@@ -38,7 +39,7 @@ class Controller(object):
 
 class View(Gtk.ApplicationWindow):
     __gsignals__ = {
-        'notify::active': (GObject.SIGNAL_RUN_FIRST, None, ())
+        'switch-serial-toggled': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
     }
 
     def __init__(self, **kw):
@@ -46,12 +47,12 @@ class View(Gtk.ApplicationWindow):
 
         self._switch_serial = Gtk.Switch()
         self._switch_serial.connect("notify::active",
-                                    self.on_switch_serial_toggled)
+                                    self._on_switch_serial_toggled)
 
         self.add(self._switch_serial)
 
-    def on_switch_serial_toggled(self, switch, state):
-        self.emit('notify::active', state)
+    def _on_switch_serial_toggled(self, switch, pspec):
+        self.emit('switch-serial-toggled', switch.get_active())
 
 
 if __name__ == '__main__':
