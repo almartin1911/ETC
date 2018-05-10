@@ -33,7 +33,8 @@ class Lpane_frameserial(Gtk.Frame):
         self._grid.attach(self._btn_refresh, 2, 0, 1, 1)
 
         self._switch_serial = Gtk.Switch()
-        self._switch_serial.connect("notify::active", self.on_switch_serial_toggled)
+        self._switch_serial.connect("notify::active",
+                                    self.on_switch_serial_toggled)
         self._grid.attach(self._switch_serial, 0, 1, 2, 1)
 
         self._btn_config = Gtk.Button()
@@ -51,14 +52,3 @@ class Lpane_frameserial(Gtk.Frame):
 
     def on_switch_serial_toggled(self, switch, state):
         self.emit('notify::active', state)
-    #     if switch.get_active():
-    #         print('Switch ON')
-    #         self.controller.arduino.open_port()
-    #         # controller.start_read_thread(self.arduino,
-    #         #                              self.tree_view_parameters)
-    #         print(self.controller.arduino)
-    #         self.controller.start_read_thread()
-    #     else:
-    #         print('Switch OFF')
-    #         self.controller.arduino.close_port()
-    #         print(self.controller.arduino)
