@@ -1,4 +1,5 @@
 import etc_serial
+import etc_packages
 
 import sys
 import bitstring
@@ -24,7 +25,7 @@ class Controller(object):
         self._read_thread = threading.Thread(
             target=self._read_data_from_serial)
 
-        self._db_session = self._model.connect_to_database()
+        self._db_session = self._model.connect_to_database(False)
         self._setup_load_parameters()
         self._load_commands()
 
@@ -185,9 +186,14 @@ class Controller(object):
         print('#', package_counter, ':', bitstream_package,
               len(bitstream_package))
 
-        # TODO: Real management of commands and users        
+        # Add raw record
+        # TODO: Real management of commands and users
         command = self._db_session.query(self._model.Command).first()
         user_exec = self._db_session.query(self._model.User).first()
 
         self._model.add_record(self._db_session, bitstream_package.hex,
                                command, user_exec)
+
+        # Parse package
+        parsed_package = etc_packages.PackageA(bitstream_package)
+        print(parsed_package)
