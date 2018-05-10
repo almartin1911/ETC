@@ -21,17 +21,46 @@ class Controller(object):
 
         self._frame_serial.connect('btn-refresh-clicked',
                                    self._on_btn_refresh_clicked)
+        self._frame_serial.connect('cbox-ports-changed',
+                                   self._on_cbox_ports_changed)
+        self._frame_serial.connect('notify::active',
+                                   self._on_switch_serial_toggled)
 
         self._view.show_all()
 
         self._arduino = etc_serial.Serial()
+        self._load_ports()
+
+        self._read_thread = threading.Thread(
+            target=self._read_data_from_serial)
         # self.db_session = self.connect_to_database()
 
     # /////////////// Serial ///////////////
-    def _on_btn_refresh_clicked(self, button, *args):
+    def _on_btn_refresh_clicked(self, button):
         # TODO: How to get the name of the button?
         print('Refresh clicked')
         self._load_ports()
+
+    def _on_cbox_ports_changed(self, cbox):
+        print('Cbox ports changed')
+        self._set_port()
+
+    def _on_switch_serial_toggled(self, switch, state):
+            if self._frame_serial._switch_serial.get_active():
+                print('Switch ON')
+                self._arduino.open_port()
+                # self.controller.arduino.open_port()
+                # # controller.start_read_thread(self.arduino,
+                # #                              self.tree_view_parameters)
+                # print(self.controller.arduino)
+
+                self._read_thread.start()
+            else:
+                print('Switch OFF')
+                self._arduino.close_port()
+                self._read_thread.sta
+                # self.controller.arduino.close_port()
+                # print(self.controller.arduino)
 
     def _get_available_serial_ports(self):
         ports = self._arduino.list_serial_ports()
@@ -43,7 +72,7 @@ class Controller(object):
         return ports_store
 
     def _load_ports(self):
-        # Loading and setting a data model for the cbox
+        # Loading and setting a data model for cbox_ports
         ports_store = self._get_available_serial_ports()
         cbox_ports = self._frame_serial._cbox_ports
         cbox_ports.set_model(ports_store)
@@ -129,64 +158,55 @@ class Controller(object):
     #     self.arduino.write(bytes_str_command)
     #     print("Command sent:", bytes_str_command)
     #
-    # # /////////////// Read data ///////////////
-    # def start_read_thread(self):
-    #     read_thread = threading.Thread(target=self.read_data_from_serial)
-    #
-    #     read_thread.start()
-    #
-    # def read_data_from_serial(self):
-    #     header = b'\xd1'
-    #
-    #     package = bytearray()
-    #
-    #     package_counter = 0
-    #     buffer_size = 32
-    #     package_pointer = 0
-    #
-    #     is_header = False
-    #     first_time_header = False
-    #
-    #     while self.arduino.is_open:
-    #         # while arduino.in_waiting > 0: BUG: CAUSES 100% CPU CONSUMPTION
-    #         received_byte = self.arduino.read()
-    #         # print(package_pointer, received_byte, end=", ")
-    #
-    #         if received_byte == header:
-    #             if not first_time_header:
-    #                 is_header = True
-    #                 package_pointer = 0
-    #                 first_time_header = True
-    #                 package = bytearray()
-    #
-    #         int_received_byte = int.from_bytes(received_byte,
-    #                                            byteorder=sys.byteorder)
-    #         package.append(int_received_byte)
-    #         package_pointer += 1
-    #
-    #         if package_pointer >= buffer_size:
-    #             package_pointer = 0
-    #
-    #             if is_header:
-    #                 # bitstream_package = bitstring.BitStream(package)
-    #                 package_counter += 1
-    #                 self.handle_package(package_counter, package)
-    #                 # print(package_counter, package)
-    #                 # print('#', package_counter, ':', bitstream_package,
-    #                       # len(bitstream_package))
-    #
-    #                 is_header = False
-    #                 first_time_header = False
-    #
-    # def handle_package(self, package_counter, package):
-    #     bitstream_package = bitstring.BitStream(package)
-    #     print('#', package_counter, ':', bitstream_package,
-    #           len(bitstream_package))
+    # /////////////// Read data ///////////////
+    def _read_data_from_serial(self):
+        header = b'\xd1'
+
+        package = bytearray()
+
+        package_counter = 0
+        buffer_size = 32
+        package_pointer = 0
+
+        is_header = False
+        first_time_header = False
+
+        while self._arduino.is_open:
+            # while arduino.in_waiting > 0: BUG: CAUSES 100% CPU CONSUMPTION
+            received_byte = self._arduino.read()
+            # print(package_pointer, received_byte, end=", ")
+
+            if received_byte == header:
+                if not first_time_header:
+                    is_header = True
+                    package_pointer = 0
+                    first_time_header = True
+                    package = bytearray()
+
+            int_received_byte = int.from_bytes(received_byte,
+                                               byteorder=sys.byteorder)
+            package.append(int_received_byte)
+            package_pointer += 1
+
+            if package_pointer >= buffer_size:
+                package_pointer = 0
+
+                if is_header:
+                    package_counter += 1
+                    self.handle_package(package_counter, package)
+
+                    is_header = False
+                    first_time_header = False
+
+    def handle_package(self, package_counter, package):
+        bitstream_package = bitstring.BitStream(package)
+        print('#', package_counter, ':', bitstream_package,
+              len(bitstream_package))
 
         # TODO: Real management of commands and users
         # BUG: SQLAlchemy works on one thread only
         # command = self.db_session.query(etc_model.Command).first()
         # user_exec = self.db_session.query(etc_model.User).first()
-
+        #
         # etc_model.add_record(self.session, bitstream_package.hex,
         #                      command, user_exec)

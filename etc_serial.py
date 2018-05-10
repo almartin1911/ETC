@@ -7,10 +7,6 @@ import glob
 class Serial(serial.Serial):
     def __init__(self, **kw):
         super(Serial, self).__init__(**kw)
-        # serial.Serial.__init__(self)
-
-    # def check_connection(self):
-    #     return True if self.is_open else False
 
     def open_port(self):
         if self.is_open:
@@ -20,6 +16,7 @@ class Serial(serial.Serial):
             try:
                 self.open()
                 print("Connection opened")
+                print(self)
             except Exception as e:
                     print(e)
 
@@ -29,6 +26,7 @@ class Serial(serial.Serial):
             try:
                 self.close()
                 print("Connection closed")
+                print(self)
             except Exception as e:
                 print(e)
         else:
