@@ -1,6 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
+from sqlalchemy import create_engine
 
 from datetime import datetime
 
@@ -12,6 +13,36 @@ Base = declarative_base()
 
 def init_model(engine):
     DBSession.configure(bind=engine)
+
+
+def setup_database(engine):
+    Base.metadata.create_all(engine)
+    print("Database sucessfully loaded/created")
+
+
+def connect_to_database():
+    db_path = "sqlite:///etc_database.db"
+    # echo=True for debugging purposes
+    engine = create_engine(db_path, encoding="utf-8", echo=True)
+    init_model(engine)
+    db_session = DBSession()
+    setup_database(engine)
+
+    return db_session
+
+
+def add_record(session, raw_data, command, user_exec):
+    record = Record()
+    record.raw_data = raw_data
+    record.datetime = datetime.now()
+
+    record.command = command
+    record.user_exec = user_exec
+
+    session.add(record)
+    session.commit()
+
+    return record
 
 
 class User(Base):
@@ -125,17 +156,3 @@ class Parameter_record(Base):
         result = f"<Parameter_record(value='{self.value}', "
         result += f"datetime='{self.datetime}')>"
         return result
-
-
-def add_record(session, raw_data, command, user_exec):
-    record = Record()
-    record.raw_data = raw_data
-    record.datetime = datetime.now()
-
-    record.command = command
-    record.user_exec = user_exec
-
-    session.add(record)
-    session.commit()
-
-    return record

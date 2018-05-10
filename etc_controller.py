@@ -4,8 +4,6 @@ import sys
 import bitstring
 import threading
 
-from sqlalchemy import create_engine
-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -14,10 +12,19 @@ from gi.repository import Gtk
 class Controller(object):
     def __init__(self, model, view):
         self._model = model
-        self._view = view
 
+        self._view = view
         self._lpane = self._view._lpane
         self._frame_serial = self._lpane._frame_serial
+        self._frame_parameters = self._lpane._frame_parameters
+
+        self._arduino = etc_serial.Serial()
+        self._load_ports()
+        self._read_thread = threading.Thread(
+            target=self._read_data_from_serial)
+
+        self._db_session = self._model.connect_to_database()
+        self._setup_load_parameters()
 
         self._frame_serial.connect('btn-refresh-clicked',
                                    self._on_btn_refresh_clicked)
@@ -27,13 +34,6 @@ class Controller(object):
                                    self._on_switch_serial_toggled)
 
         self._view.show_all()
-
-        self._arduino = etc_serial.Serial()
-        self._load_ports()
-
-        self._read_thread = threading.Thread(
-            target=self._read_data_from_serial)
-        # self.db_session = self.connect_to_database()
 
     # /////////////// Serial ///////////////
     def _on_btn_refresh_clicked(self, button):
@@ -49,18 +49,10 @@ class Controller(object):
             if self._frame_serial._switch_serial.get_active():
                 print('Switch ON')
                 self._arduino.open_port()
-                # self.controller.arduino.open_port()
-                # # controller.start_read_thread(self.arduino,
-                # #                              self.tree_view_parameters)
-                # print(self.controller.arduino)
-
                 self._read_thread.start()
             else:
                 print('Switch OFF')
                 self._arduino.close_port()
-                self._read_thread.sta
-                # self.controller.arduino.close_port()
-                # print(self.controller.arduino)
 
     def _get_available_serial_ports(self):
         ports = self._arduino.list_serial_ports()
@@ -91,47 +83,33 @@ class Controller(object):
         except TypeError:
             print("No connected devices")
 
-    # /////////////// Database ///////////////
-    # def setup_database(self, engine):
-    #     etc_model.Base.metadata.create_all(engine)
-    #     print("Database sucessfully created")
-    #
-    # def connect_to_database(self):
-    #     db_path = "sqlite:///etc_database.db"
-    #     # echo=True for debugging purposes
-    #     engine = create_engine(db_path, encoding="utf-8", echo=True)
-    #     etc_model.init_model(engine)
-    #     db_session = etc_model.DBSession()
-    #     self.setup_database(engine)
-    #
-    #     return db_session
-
     # /////////////// Parameters ///////////////
-    # def get_parameters(self):
-    #     # Querying the db trough db_session
-    #     parameters = self.db_session.query(etc_model.Parameter).all()
-    #     parameters_store = Gtk.ListStore(str, str, str)
-    #
-    #     # Populating parameters_store
-    #     default_value = "0"
-    #     for parameter in parameters:
-    #         symbol = parameter.symbol
-    #         unit = parameter.unit
-    #         parameters_store.append([symbol, default_value, unit])
-    #
-    #     return parameters_store
-    #
-    # def setup_load_parameters(self, treeview):
-    #     # Setting headings and a text renderer for each column
-    #     columns = ["Simbolo", "Valor", "Unidad"]
-    #     for i, column_title in enumerate(columns):
-    #         renderer_text = Gtk.CellRendererText()
-    #         column = Gtk.TreeViewColumn(column_title, renderer_text, text=i)
-    #         treeview.append_column(column)
-    #
-    #     # Loading and setting a model for the treeview
-    #     parameters_store = self.get_parameters()
-    #     treeview.set_model(parameters_store)
+    def _get_parameters(self):
+        # Querying the db trough db_session
+        parameters = self._db_session.query(self._model.Parameter).all()
+        parameters_store = Gtk.ListStore(str, str, str)
+
+        # Populating parameters_store
+        default_value = "0"
+        for parameter in parameters:
+            symbol = parameter.symbol
+            unit = parameter.unit
+            parameters_store.append([symbol, default_value, unit])
+
+        return parameters_store
+
+    def _setup_load_parameters(self):
+        tv_parameters = self._frame_parameters._tv_parameters
+        # Setting headings and a text renderer for each column
+        columns = ["Simbolo", "Valor", "Unidad"]
+        for i, column_title in enumerate(columns):
+            renderer_text = Gtk.CellRendererText()
+            column = Gtk.TreeViewColumn(column_title, renderer_text, text=i)
+            tv_parameters.append_column(column)
+
+        # Loading and setting a model for the treeview
+        parameters_store = self._get_parameters()
+        tv_parameters.set_model(parameters_store)
 
     # /////////////// Commands ///////////////
     # def get_commands(self):

@@ -1,6 +1,6 @@
-import etc_model as m
-import etc_view as v
-import etc_controller as c
+import etc_model as model
+import etc_view as view
+import etc_controller as controller
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -15,8 +15,8 @@ class Application(Gtk.Application):
         super(Application, self).__init__(application_id=app_id, flags=flags)
 
     def do_activate(self):
-        # c.Controller(m.Model(), v.View(application=self))
-        c.Controller(None, v.View(application=self))
+        controller.Controller(model, view.View(application=self))
+        # c.Controller(None, v.View(application=self))
 
     def do_startup(self):
         Gtk.Application.do_startup(self)

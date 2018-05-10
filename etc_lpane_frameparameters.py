@@ -12,5 +12,4 @@ class Lpane_frameparameters(Gtk.Frame):
         self.add(self._grid)
 
         self._tv_parameters = Gtk.TreeView()
-        # self.controller.setup_load_parameters(self.tv_parameters)
         self._grid.attach(self._tv_parameters, 0, 0, 1, 1)
