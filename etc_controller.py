@@ -17,6 +17,7 @@ class Controller(object):
         self._lpane = self._view._lpane
         self._frame_serial = self._lpane._frame_serial
         self._frame_parameters = self._lpane._frame_parameters
+        self._frame_commands = self._lpane._frame_commands
 
         self._arduino = etc_serial.Serial()
         self._load_ports()
@@ -25,6 +26,7 @@ class Controller(object):
 
         self._db_session = self._model.connect_to_database()
         self._setup_load_parameters()
+        self._load_commands()
 
         self._frame_serial.connect('btn-refresh-clicked',
                                    self._on_btn_refresh_clicked)
@@ -112,30 +114,32 @@ class Controller(object):
         tv_parameters.set_model(parameters_store)
 
     # /////////////// Commands ///////////////
-    # def get_commands(self):
-    #     commands = self.db_session.query(etc_model.Command).all()
-    #     return commands
-    #
-    # def load_commands(self, flowbox):
-    #     commands_list = self.get_commands()
-    #
-    #     for command in commands_list:
-    #         button = Gtk.Button()
-    #         button.set_label(command.name)
-    #         button.connect("clicked",
-    #                        self.on_btn_command_clicked,
-    #                        command)
-    #         flowbox.add(button)
-    #
-    # def on_btn_command_clicked(self, button, command):
-    #     print(command)  # command is an object!
-    #
-    #     str_command = command.command
-    #     bytes_str_command = bytes.fromhex(str_command)
-    #
-    #     self.arduino.write(bytes_str_command)
-    #     print("Command sent:", bytes_str_command)
-    #
+    def _get_commands(self):
+        commands_list = self._db_session.query(self._model.Command).all()
+
+        return commands_list
+
+    def _load_commands(self):
+        flowbox = self._frame_commands._flowbox
+        commands_list = self._get_commands()
+
+        for command in commands_list:
+            button = Gtk.Button()
+            button.set_label(command.name)
+            button.connect("clicked",
+                           self._on_btn_command_clicked,
+                           command)
+            flowbox.add(button)
+
+    def _on_btn_command_clicked(self, button, command):
+        print(command)  # command is an object!
+
+        str_command = command.command
+        bytes_str_command = bytes.fromhex(str_command)
+
+        self._arduino.write(bytes_str_command)
+        print("Command sent:", bytes_str_command)
+
     # /////////////// Read data ///////////////
     def _read_data_from_serial(self):
         header = b'\xd1'

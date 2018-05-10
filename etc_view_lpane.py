@@ -18,6 +18,7 @@ class View_lpane(Gtk.Grid):
         self._frame_parameters = \
             etc_lpane_frameparameters.Lpane_frameparameters()
         self.attach(self._frame_parameters, 0, 1, 1, 1)
-        #
-        # frame_commands = frmcommands.ETC_window_frmcommands(controller)
-        # self.attach(frame_commands, 0, 2, 1, 1)
+
+        self._frame_commands = \
+            etc_lpane_framecommands.Lpane_framecommands()
+        self.attach(self._frame_commands, 0, 2, 1, 1)

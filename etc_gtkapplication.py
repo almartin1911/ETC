@@ -16,7 +16,6 @@ class Application(Gtk.Application):
 
     def do_activate(self):
         controller.Controller(model, view.View(application=self))
-        # c.Controller(None, v.View(application=self))
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
