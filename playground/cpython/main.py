@@ -2,7 +2,8 @@ import random
 import ctypes
 import time
 
-lib = ctypes.CDLL('./libreria.so')
+# TODO: Configure relative path.
+lib = ctypes.CDLL('/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
 
 
 def c_add_int_array(int_array, size):
@@ -45,7 +46,7 @@ def print_array(array):
     print()
 
 
-size_a = 139
+size_a = 31
 size_b = 16
 # Next line generates UNIQUE random rumbers
 # py_int_array = random.sample(range(0, 256), size)
