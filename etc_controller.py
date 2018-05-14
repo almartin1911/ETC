@@ -1,9 +1,10 @@
 import etc_serial
-import etc_packages
+# import etc_packages
 
 import sys
 import bitstring
 import threading
+import ctypes
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -35,6 +36,9 @@ class Controller(object):
                                    self._on_cbox_ports_changed)
         self._frame_serial.connect('switch-serial-toggled',
                                    self._on_switch_serial_toggled)
+
+        # TODO> Relative path
+        self._lib = ctypes.CDLL('/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
 
         self._view.show_all()
 
@@ -148,7 +152,7 @@ class Controller(object):
         package = bytearray()
 
         package_counter = 0
-        buffer_size = 32
+        buffer_size = 31
         package_pointer = 0
 
         is_header = False
@@ -185,15 +189,37 @@ class Controller(object):
         bitstream_package = bitstring.BitStream(package)
         print('#', package_counter, ':', bitstream_package,
               len(bitstream_package))
+        # print('#', package_counter, ':', package,
+        #       len(package))
 
         # Add raw record
         # TODO: Real management of commands and users
         command = self._db_session.query(self._model.Command).first()
         user_exec = self._db_session.query(self._model.User).first()
 
+        # self._model.add_record(self._db_session, package,
+        #                        command, user_exec)
         self._model.add_record(self._db_session, bitstream_package.hex,
                                command, user_exec)
 
         # Parse package
-        parsed_package = etc_packages.PackageA(bitstream_package)
-        print(parsed_package)
+        c_chr_array_package = (ctypes.c_char * len(package))(*package)
+        size = 16
+        c_float_array_parsed = (ctypes.c_float * size)()
+        self.c_convierte(c_chr_array_package,
+                         len(c_chr_array_package),
+                         c_float_array_parsed,
+                         len(c_float_array_parsed))
+        self.print_array(c_float_array_parsed)
+        # parsed_package = etc_packages.PackageA(bitstream_package)
+        # print(parsed_package)
+
+    def c_convierte(self, input, size_in, output, size_out):
+        self._lib.convierte.restype = ctypes.c_void_p
+        self._lib.convierte(input, size_in, output, size_out)
+
+    def print_array(self, array):
+        print(len(array), end=' | ')
+        for value in array:
+            print(format(value, '.2f'), end=', ')
+        print()

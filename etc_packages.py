@@ -5,13 +5,13 @@ class PackageA(object):
         self.bs = bitstream
         # self._test()
 
-        self.head = self.bs.read('uint:8')
-        self.imu = self.bs.readlist('9*uint:16')
-        self.bar = self.bs.read('uint:20')
-        self.temp = self.bs.readlist('3*uint:12')
-        self.sc = self.bs.read('uint:12')
-        self.sv = self.bs.read('uint:12')
-        self.suv = self.bs.read('uint:16')
+        self.head = self.bs.read('hex:8')
+        self.imu = self.bs.readlist('9*hex:16')
+        self.bar = self.bs.read('hex:20')
+        self.temp = self.bs.readlist('3*hex:12')
+        self.sc = self.bs.read('hex:12')
+        self.sv = self.bs.read('hex:12')
+        self.suv = self.bs.read('hex:16')
 
         # self._parse()
 
