@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-void print_u_char_array(unsigned char *buf, int count);
+void print_uchar_array(u_int8_t *buf, int count);
 
-void fill_with_random(unsigned char *buf, int count);
+void fill_with_random(u_int8_t *buf, int count);
 
-void convierte(unsigned char *in, int tam_in, float *out, int tam_out);
+void convierte(u_int8_t *in, int tam_in, float *out, int tam_out);
 
 void print_float_array(float *buf, int count);
 
@@ -17,15 +17,15 @@ void copy_array(int array_in[], int size, int array_out[]);
 void update_array(int array_in[], int size);
 
 int main() {
-    int tam_array_in = 139;
+    int tam_array_in = 30;
     int tam_array_out = 16;
-    unsigned char array_in[139];
+    u_int8_t array_in[30];
     float array_out[16];
 
     srand(time(NULL));
 
     fill_with_random(array_in, tam_array_in);
-    print_u_char_array(array_in, tam_array_in);
+    print_uchar_array(array_in, tam_array_in);
 
     printf("\n\n");
 
@@ -35,30 +35,30 @@ int main() {
     return 0;
 }
 
-void print_u_char_array(unsigned char *buf, int count){
+void print_uchar_array(u_int8_t *buf, int count){
     for (size_t i = 0; i < count; i++) {
         printf("%d, ", buf[i]);
     }
 }
 
-void fill_with_random(unsigned char *buf, int count) {
-    unsigned char num;
+void fill_with_random(u_int8_t *buf, int count) {
+    u_int8_t num;
 
-    for(int i = 0; i < count; ++i){
+    for(size_t i = 0; i < count; ++i){
         num = rand();
         buf[i] = num;
     }
 }
 
-void convierte(unsigned char *in, int tam_in, float *out, int tam_out){
-        for (int i = 0; i < tam_out; i++) {
+void convierte(u_int8_t *in, int tam_in, float *out, int tam_out){
+        for (size_t i = 0; i < tam_out; i++) {
             out[i] = in[i] + 0.34;
         }
 }
 
 void print_float_array(float *buf, int count){
     for (size_t i = 0; i < count; i++) {
-        printf("%5.2f, ", buf[i]);
+        printf("%.8f, ", buf[i]);
     }
 }
 
