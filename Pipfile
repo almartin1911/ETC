@@ -11,6 +11,10 @@ sqlalchemy = "*"
 pyserial-asyncio = "*"
 bitstring = "*"
 numpy = "*"
+matplotlib = "*"
+drawnow = "*"
+pandas = "*"
+cairocffi = "*"
 
 [dev-packages]
 
