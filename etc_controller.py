@@ -268,6 +268,22 @@ class Controller(object):
                          len(c_float_array_parsed))
         self.print_array(c_float_array_parsed)
 
+        # Refresh treeiter
+        tv_parameters = self._frame_parameters._tv_parameters
+        store_parameters = tv_parameters.get_model()
+
+        rootiter = store_parameters.get_iter_first()
+        store_parameters[rootiter][1] = f'{c_float_array_parsed[0]:.2f}'
+
+        treeiter = store_parameters.iter_next(rootiter)
+        store_parameters[treeiter][1] = f'{c_float_array_parsed[1]:.2f}'
+
+        for i in range(2, 16):
+                treeiter = store_parameters.iter_next(treeiter)
+                store_parameters[treeiter][1] = f'{c_float_array_parsed[i]:.2f}'
+
+        tv_parameters.set_model(store_parameters)
+
     def c_convierte(self, input, size_in, output, size_out):
         self._lib.convierte.restype = ctypes.c_void_p
         self._lib.convierte(input, size_in, output, size_out)
