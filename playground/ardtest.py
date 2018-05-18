@@ -2,60 +2,151 @@
 # with a "header" header.
 # ls /dev/tty*
 
+import threading
 import serial
 import sys
+# import os
 import time
 import bitstring
 import numpy
 
-port = '/dev/ttyACM0'
-arduino = serial.Serial(port, 9600)
-time.sleep(2)
-command1 = b'\xc2'
-command2 = b'\xc3'
 
-# arduino.write(command2)
+class ArdTest(object):
+    def __init__(self, port='/dev/ttyACM0', baud=9600):
+        super(ArdTest, self).__init__()
+        self.port = port
+        self.baud = baud
 
-header = b'\xd1'
-package_size = 31
+        self.is_run = True
+        self.is_receiving = False
+        self.thread = None
 
-# package = bytearray()
-package = numpy.empty(dtype=numpy.uint8, shape=package_size)
+        self.raw_data = bytearray(1)
+        # Next won't work
+        # self.raw_data = b''
 
-package_counter = 0
-package_pointer = 0
+        self.header = b'\xd1'
+        self.buffer_size = 31
+        # self.buffer = numpy.empty(dtype=numpy.uint8, shape=self.buffer_size)
+        self.buffer = bytearray(self.buffer_size)
+        self.buffer_counter = 0
+        self.buffer_pointer = 0
 
-is_header = False
-first_time_header = False
+        self.is_header = False
+        self.first_time_header = False
 
-while True:
-    # while arduino.in_waiting > 0: BUG: CAUSES 100% CPU CONSUMPTION
-    received_byte = arduino.read()
-    print(package_pointer, received_byte, end=", ")
+        self.bad_buffer_counter = 0
 
-    if received_byte == header:
-        if not first_time_header:
-            is_header = True
-            package_pointer = 0
-            first_time_header = True
-            # package = bytearray()
+        print(f'Trying connection at {self.port} with {self.baud} baudrate...')
+        try:
+            self.serial_connection = serial.Serial(port, baud, timeout=4)
+            print('Succesful connection!')
+        except Exception as e:
+            print('Failed to connect')
 
-    int_received_byte = int.from_bytes(received_byte, byteorder=sys.byteorder)
-    # package.append(int_received_byte)
-    package[package_pointer] = int_received_byte
-    package_pointer += 1
+    def background_thread(self):
+        self.serial_connection.reset_input_buffer()
+        while self.is_run:
+            self.serial_connection.readinto(self.raw_data)
+            # print(self.raw_data)
+            self.package_builder()
+            self.is_receiving = True
 
-    if package_pointer >= package_size:
-        package_pointer = 0
+    def read_serial_start(self):
+        if self.thread is None:
+            self.thread = threading.Thread(target=self.background_thread)
+            self.thread.start()
+            # try:
+            #     self.thread.start()
+            # except(KeyboardInterrupt, SystemExit):
+            #     self.close()
 
-        if is_header:
-            bitstream_package = bitstring.BitStream(package.tobytes())
-            package_counter += 1
-            # print(package_counter, package)
-            print('#', package_counter, ':', bitstream_package,
-                  len(bitstream_package))
+            # Block till we start receiving values
+            while self.is_receiving is not True:
+                time.sleep(0.1)
 
-            is_header = False
-            first_time_header = False
+    # TODO: Use next function logic to gracefully end the thread
+    def close(self):
+        self.is_run = False
+        self.thread.join()
+        self.serial_connection.close()
+        print('Disconnected...')
 
-# return package_list
+    def package_builder(self):
+        received_byte = self.raw_data
+        # print(self.buffer_pointer, received_byte, end=", ")
+
+        if received_byte == self.header:
+            if not self.first_time_header:
+                self.is_header = True
+                self.buffer_pointer = 0
+                self.first_time_header = True
+
+        int_received_byte = int.from_bytes(received_byte,
+                                           byteorder=sys.byteorder)
+        self.buffer[self.buffer_pointer] = int_received_byte
+        self.buffer_pointer += 1
+
+        if self.buffer_pointer >= self.buffer_size:
+            self.buffer_pointer = 0
+
+            if self.is_header:
+                checksum_value = bytes([self.buffer[self.buffer_size - 1]])
+
+                if self.verify_checksum(checksum_value):
+                    self.buffer_counter += 1
+                    self.print_package()
+                else:
+                    self.bad_buffer_counter += 1
+
+                self.is_header = False
+                self.first_time_header = False
+
+    def verify_checksum(self, orig_result):
+        result = b''
+        mask = b'\xff'
+        sum = 0
+
+        for i in range(self.buffer_size - 1):
+            # num = int.from_bytes(self.buffer[i], byteorder=sys.byteorder)
+            sum += self.buffer[i]
+
+        result = bytes([sum.to_bytes(4, sys.byteorder)[0] & mask[0]])
+        print(result, orig_result)
+
+        if orig_result == result:
+            return True
+        else:
+            return False
+
+    def print_package(self):
+        bitstream_buffer = bitstring.BitStream(self.buffer)
+        # bitstream_buffer = bitstring.BitStream(self.buffer.tobytes())
+        print('#', self.buffer_counter, ':', bitstream_buffer,
+              len(bitstream_buffer))
+        print("Lost packages:", self.bad_buffer_counter)
+
+
+def main():
+    port = '/dev/ttyACM0'
+    baud = 38400
+    arduino = ArdTest(port, baud)
+    arduino.read_serial_start()
+
+
+if __name__ == '__main__':
+    main()
+    # try:
+    #     # main()
+    #     port = '/dev/ttyACM0'
+    #     baud = 9600
+    #     arduino = ArdTest(port, baud)
+    #     arduino.read_serial_start()
+    #
+    # except KeyboardInterrupt:
+    #     print('Interrupted')
+    #     arduino.close()
+    #     try:
+    #         sys.exit(0)
+    #     except SystemExit:
+    #         os._exit(0)
