@@ -4,6 +4,7 @@ import etc_serial
 import sys
 import bitstring
 import threading
+# import time
 import ctypes
 
 import gi
@@ -15,21 +16,42 @@ class Controller(object):
     def __init__(self, model, view):
         self._model = model
 
+        # VIEW
         self._view = view
         self._lpane = self._view._lpane
         self._frame_serial = self._lpane._frame_serial
         self._frame_parameters = self._lpane._frame_parameters
         self._frame_commands = self._lpane._frame_commands
 
+        # SERIAL
         self._arduino = etc_serial.Serial()
         self._load_ports()
-        self._read_thread = threading.Thread(
-            target=self._read_data_from_serial)
+        # self._read_thread = threading.Thread(
+        #     target=self._read_data_from_serial)
+        self.is_run = True
+        self.is_receiving = False
+        self.thread = None
 
+        self.raw_data = bytearray(1)
+        self.header = b'\xd1'
+        self.package_size = 31
+        # self.package = numpy.empty(dtype=numpy.uint8,
+        #                            shape=self.package_size)
+        self.package = bytearray(self.package_size)
+        self.package_counter = 0
+        self.package_pointer = 0
+
+        self.is_header = False
+        self.first_time_header = False
+
+        self.bad_package_counter = 0
+
+        # DATABASE
         self._db_session = self._model.connect_to_database(False)
         self._setup_load_parameters()
         self._load_commands()
 
+        # VIEW EVENTS
         self._frame_serial.connect('btn-refresh-clicked',
                                    self._on_btn_refresh_clicked)
         self._frame_serial.connect('cbox-ports-changed',
@@ -38,7 +60,8 @@ class Controller(object):
                                    self._on_switch_serial_toggled)
 
         # TODO> Relative path
-        self._lib = ctypes.CDLL('/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
+        self._lib = ctypes.CDLL(
+            '/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
 
         self._view.show_all()
 
@@ -56,10 +79,10 @@ class Controller(object):
             if active is True:
                 print('Switch ON')
                 self._arduino.open_port()
-                self._read_thread.start()
+                self.read_serial_start()
             else:
                 print('Switch OFF')
-                self._arduino.close_port()
+                self.close_connection()
 
     def _get_available_serial_ports(self):
         ports = self._arduino.list_serial_ports()
@@ -146,51 +169,83 @@ class Controller(object):
         print("Command sent:", bytes_str_command)
 
     # /////////////// Read data ///////////////
-    def _read_data_from_serial(self):
-        header = b'\xd1'
+    def background_thread(self):
+        self._arduino.reset_input_buffer()
+        while self.is_run:
+            self._arduino.readinto(self.raw_data)
+            # print(self.raw_data)
+            self.package_builder()
+            self.is_receiving = True
 
-        package = bytearray()
+    def read_serial_start(self):
+        if self.thread is None:
+            self.thread = threading.Thread(target=self.background_thread)
+            self.thread.start()
 
-        package_counter = 0
-        buffer_size = 31
-        package_pointer = 0
+            # Block till we start receiving values
+            # while self.is_receiving is not True:
+            #     time.sleep(0.1)
 
-        is_header = False
-        first_time_header = False
+    # TODO: Use next function logic to gracefully end the thread
+    def close_connection(self):
+        self.is_run = False
+        self.thread.join()
+        self._arduino.close()
+        print('Disconnected...')
 
-        while self._arduino.is_open:
-            # while arduino.in_waiting > 0: BUG: CAUSES 100% CPU CONSUMPTION
-            received_byte = self._arduino.read()
-            # print(package_pointer, received_byte, end=", ")
+    def package_builder(self):
+        received_byte = self.raw_data
+        # print(self.package_pointer, received_byte, end=", ")
 
-            if received_byte == header:
-                if not first_time_header:
-                    is_header = True
-                    package_pointer = 0
-                    first_time_header = True
-                    package = bytearray()
+        if received_byte == self.header:
+            if not self.first_time_header:
+                self.is_header = True
+                self.package_pointer = 0
+                self.first_time_header = True
 
-            int_received_byte = int.from_bytes(received_byte,
-                                               byteorder=sys.byteorder)
-            package.append(int_received_byte)
-            package_pointer += 1
+        int_received_byte = int.from_bytes(received_byte,
+                                           byteorder=sys.byteorder)
+        self.package[self.package_pointer] = int_received_byte
+        self.package_pointer += 1
 
-            if package_pointer >= buffer_size:
-                package_pointer = 0
+        if self.package_pointer >= self.package_size:
+            self.package_pointer = 0
 
-                if is_header:
-                    package_counter += 1
-                    self._handle_package(package_counter, package)
+            if self.is_header:
+                checksum_value = bytes([self.package[self.package_size - 1]])
 
-                    is_header = False
-                    first_time_header = False
+                if self.verify_checksum(checksum_value):
+                    self.package_counter += 1
+                    self.print_package()
+                else:
+                    self.bad_package_counter += 1
 
-    def _handle_package(self, package_counter, package):
-        bitstream_package = bitstring.BitStream(package)
-        print('#', package_counter, ':', bitstream_package,
+                self.is_header = False
+                self.first_time_header = False
+
+    def verify_checksum(self, orig_result):
+        result = b''
+        mask = b'\xff'
+        sum = 0
+
+        for i in range(self.package_size - 1):
+            # num = int.from_bytes(self.package[i], byteorder=sys.byteorder)
+            sum += self.package[i]
+
+        result = bytes([sum.to_bytes(4, sys.byteorder)[0] & mask[0]])
+        # print(result, orig_result)
+
+        if orig_result == result:
+            return True
+        else:
+            return False
+
+    def print_package(self):
+        bitstream_package = bitstring.BitStream(self.package)
+        # bitstream_package = bitstring.BitStream(self.package.tobytes())
+        print('#', self.package_counter, ':', bitstream_package,
               len(bitstream_package))
-        # print('#', package_counter, ':', package,
-        #       len(package))
+        print("Lost packages:", self.bad_package_counter)
 
         # Add raw record
         # TODO: Real management of commands and users
@@ -203,7 +258,8 @@ class Controller(object):
                                command, user_exec)
 
         # Parse package
-        c_chr_array_package = (ctypes.c_char * len(package))(*package)
+        c_chr_array_package = (ctypes.c_char
+                               * len(self.package))(*self.package)
         size = 16
         c_float_array_parsed = (ctypes.c_float * size)()
         self.c_convierte(c_chr_array_package,
@@ -211,8 +267,6 @@ class Controller(object):
                          c_float_array_parsed,
                          len(c_float_array_parsed))
         self.print_array(c_float_array_parsed)
-        # parsed_package = etc_packages.PackageA(bitstream_package)
-        # print(parsed_package)
 
     def c_convierte(self, input, size_in, output, size_out):
         self._lib.convierte.restype = ctypes.c_void_p

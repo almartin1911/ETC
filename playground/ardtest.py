@@ -22,7 +22,7 @@ class ArdTest(object):
         self.thread = None
 
         self.raw_data = bytearray(1)
-        # Next won't work
+        # Next won't work since pyserial readline needs a bytearray or array
         # self.raw_data = b''
 
         self.header = b'\xd1'
@@ -112,7 +112,7 @@ class ArdTest(object):
             sum += self.buffer[i]
 
         result = bytes([sum.to_bytes(4, sys.byteorder)[0] & mask[0]])
-        print(result, orig_result)
+        # print(result, orig_result)
 
         if orig_result == result:
             return True
@@ -125,6 +125,9 @@ class ArdTest(object):
         print('#', self.buffer_counter, ':', bitstream_buffer,
               len(bitstream_buffer))
         print("Lost packages:", self.bad_buffer_counter)
+
+    def return_buffer(self):
+        return self.buffer
 
 
 def main():
