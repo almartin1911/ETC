@@ -40,9 +40,23 @@ def add_record(session, raw_data, command, user_exec):
     record.user_exec = user_exec
 
     session.add(record)
-    session.commit()
+    # session.commit()
 
     return record
+
+
+def add_parameter_record(session, value, parameter, record):
+    parameter_record = Parameter_record()
+    parameter_record.value = value
+    parameter_record.datetime = record.datetime
+
+    parameter_record.parameter = parameter
+    parameter_record.record = record
+
+    session.add(parameter_record)
+    # session.commit()
+
+    return parameter_record
 
 
 class User(Base):

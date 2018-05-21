@@ -29,7 +29,6 @@ class Controller(object):
         # self._read_thread = threading.Thread(
         #     target=self._read_data_from_serial)
         self.is_run = True
-        self.is_receiving = False
         self.thread = None
 
         self.raw_data = bytearray(1)
@@ -47,7 +46,13 @@ class Controller(object):
         self.bad_package_counter = 0
 
         # DATABASE
+        # False parameter: no debug
         self._db_session = self._model.connect_to_database(False)
+        self._parameters = self._get_parameters()
+        # print(self._parameters, len(self._parameters))
+        # TODO: Real management of commands and users
+        self._command = self._db_session.query(self._model.Command).first()
+        self._user_exec = self._db_session.query(self._model.User).first()
         self._setup_load_parameters()
         self._load_commands()
 
@@ -59,7 +64,8 @@ class Controller(object):
         self._frame_serial.connect('switch-serial-toggled',
                                    self._on_switch_serial_toggled)
 
-        # TODO> Relative path
+        # C LIBRARY INTERACTION
+        # TODO: Relative path
         self._lib = ctypes.CDLL(
             '/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
 
@@ -78,11 +84,34 @@ class Controller(object):
     def _on_switch_serial_toggled(self, widget, active):
             if active is True:
                 print('Switch ON')
-                self._arduino.open_port()
-                self.read_serial_start()
+                self.start_operations()
             else:
                 print('Switch OFF')
-                self.close_connection()
+                self.stop_operations()
+
+    def start_operations(self):
+        self._db_session = self._model.connect_to_database(False)
+        self.thread = None
+        self.is_run = True
+        self._arduino.open_port()
+        self.read_serial_start()
+
+    def stop_operations(self):
+        # Thread close
+        self.is_run = False
+        self.thread.join()
+        # Arduino close
+        self._arduino.close()
+        # SQLAlchemy session commiting and closing
+        try:
+            self._db_session.commit()
+        except:
+            self._db_session.rollback()
+            raise
+        finally:
+            self._db_session.close()
+
+        print('Disconnected...')
 
     def _get_available_serial_ports(self):
         ports = self._arduino.list_serial_ports()
@@ -115,13 +144,16 @@ class Controller(object):
 
     # /////////////// Parameters ///////////////
     def _get_parameters(self):
+        return self._db_session.query(self._model.Parameter).all()
+
+    def _get_parameters_store(self):
         # Querying the db trough db_session
-        parameters = self._db_session.query(self._model.Parameter).all()
+        # parameters = self._db_session.query(self._model.Parameter).all()
         parameters_store = Gtk.ListStore(str, str, str)
 
         # Populating parameters_store
-        default_value = "0"
-        for parameter in parameters:
+        default_value = "0.00"
+        for parameter in self._parameters:
             symbol = parameter.symbol
             unit = parameter.unit
             parameters_store.append([symbol, default_value, unit])
@@ -138,14 +170,12 @@ class Controller(object):
             tv_parameters.append_column(column)
 
         # Loading and setting a model for the treeview
-        parameters_store = self._get_parameters()
+        parameters_store = self._get_parameters_store()
         tv_parameters.set_model(parameters_store)
 
     # /////////////// Commands ///////////////
     def _get_commands(self):
-        commands_list = self._db_session.query(self._model.Command).all()
-
-        return commands_list
+        return self._db_session.query(self._model.Command).all()
 
     def _load_commands(self):
         flowbox = self._frame_commands._flowbox
@@ -175,23 +205,12 @@ class Controller(object):
             self._arduino.readinto(self.raw_data)
             # print(self.raw_data)
             self.package_builder()
-            self.is_receiving = True
 
     def read_serial_start(self):
+        # print("THREAD:", self.thread)
         if self.thread is None:
             self.thread = threading.Thread(target=self.background_thread)
             self.thread.start()
-
-            # Block till we start receiving values
-            # while self.is_receiving is not True:
-            #     time.sleep(0.1)
-
-    # TODO: Use next function logic to gracefully end the thread
-    def close_connection(self):
-        self.is_run = False
-        self.thread.join()
-        self._arduino.close()
-        print('Disconnected...')
 
     def package_builder(self):
         received_byte = self.raw_data
@@ -216,7 +235,7 @@ class Controller(object):
 
                 if self.verify_checksum(checksum_value):
                     self.package_counter += 1
-                    self.print_package()
+                    self.handle_package()
                 else:
                     self.bad_package_counter += 1
 
@@ -240,7 +259,7 @@ class Controller(object):
         else:
             return False
 
-    def print_package(self):
+    def handle_package(self):
         bitstream_package = bitstring.BitStream(self.package)
         # bitstream_package = bitstring.BitStream(self.package.tobytes())
         print('#', self.package_counter, ':', bitstream_package,
@@ -248,39 +267,42 @@ class Controller(object):
         print("Lost packages:", self.bad_package_counter)
 
         # Add raw record
-        # TODO: Real management of commands and users
-        command = self._db_session.query(self._model.Command).first()
-        user_exec = self._db_session.query(self._model.User).first()
-
-        # self._model.add_record(self._db_session, package,
-        #                        command, user_exec)
-        self._model.add_record(self._db_session, bitstream_package.hex,
-                               command, user_exec)
+        record = self._model.add_record(self._db_session,
+                                        bitstream_package.hex,
+                                        self._command, self._user_exec)
 
         # Parse package
         c_chr_array_package = (ctypes.c_char
                                * len(self.package))(*self.package)
-        size = 16
-        c_float_array_parsed = (ctypes.c_float * size)()
+        # size = 16
+        c_float_array_parsed = (ctypes.c_float * len(self._parameters))()
         self.c_convierte(c_chr_array_package,
                          len(c_chr_array_package),
                          c_float_array_parsed,
                          len(c_float_array_parsed))
         self.print_array(c_float_array_parsed)
 
+        parsed_parameters = []
+        for i in range(len(self._parameters)):
+            parsed_parameters.append(f'{c_float_array_parsed[i]:.3f}')
+            self._model.add_parameter_record(self._db_session,
+                                             parsed_parameters[i],
+                                             self._parameters[i],
+                                             record)
+
         # Refresh treeiter
         tv_parameters = self._frame_parameters._tv_parameters
         store_parameters = tv_parameters.get_model()
 
         rootiter = store_parameters.get_iter_first()
-        store_parameters[rootiter][1] = f'{c_float_array_parsed[0]:.2f}'
+        store_parameters[rootiter][1] = parsed_parameters[0]
 
         treeiter = store_parameters.iter_next(rootiter)
-        store_parameters[treeiter][1] = f'{c_float_array_parsed[1]:.2f}'
+        store_parameters[treeiter][1] = parsed_parameters[1]
 
-        for i in range(2, 16):
+        for i in range(2, len(self._parameters)):
                 treeiter = store_parameters.iter_next(treeiter)
-                store_parameters[treeiter][1] = f'{c_float_array_parsed[i]:.2f}'
+                store_parameters[treeiter][1] = parsed_parameters[i]
 
         tv_parameters.set_model(store_parameters)
 
