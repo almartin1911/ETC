@@ -276,10 +276,10 @@ class Controller(object):
                                * len(self.package))(*self.package)
         # size = 16
         c_float_array_parsed = (ctypes.c_float * len(self._parameters))()
-        self.c_convierte(c_chr_array_package,
-                         len(c_chr_array_package),
-                         c_float_array_parsed,
-                         len(c_float_array_parsed))
+        self.c_parse_package(c_chr_array_package,
+                             len(c_chr_array_package),
+                             c_float_array_parsed,
+                             len(c_float_array_parsed))
         self.print_array(c_float_array_parsed)
 
         parsed_parameters = []
@@ -306,9 +306,9 @@ class Controller(object):
 
         tv_parameters.set_model(store_parameters)
 
-    def c_convierte(self, input, size_in, output, size_out):
-        self._lib.convierte.restype = ctypes.c_void_p
-        self._lib.convierte(input, size_in, output, size_out)
+    def c_parse_package(self, input, size_in, output, size_out):
+        self._lib.parse_package.restype = ctypes.c_void_p
+        self._lib.parse_package(input, size_in, output, size_out)
 
     def print_array(self, array):
         print(len(array), end=' | ')
