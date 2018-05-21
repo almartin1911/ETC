@@ -21,9 +21,9 @@ def c_copy_array(chr_array_in, size, chr_array_out):
     lib.copy_array(chr_array_in, size, chr_array_out)
 
 
-def c_convierte(input, size_in, output, size_out):
-    lib.convierte.restype = ctypes.c_void_p
-    lib.convierte(input, size_in, output, size_out)
+def c_parse_package(input, size_in, output, size_out):
+    lib.parse_package.restype = ctypes.c_void_p
+    lib.parse_package(input, size_in, output, size_out)
 
 
 def c_updateArray():
@@ -60,10 +60,10 @@ py_int_array = [random.choice(range(256)) for i in range(size_a)]
 
 # print("Runtime: %.5f ms" % (1000 * (t1 - t0)))
 
-c_int_array_a = (ctypes.c_int * size_a)(*py_int_array)
-print_array(c_int_array_a)
-c_int_array_b = (ctypes.c_int * size_a)()
-print_array(c_int_array_b)
+# c_int_array_a = (ctypes.c_int * size_a)(*py_int_array)
+# print_array(c_int_array_a)
+# c_int_array_b = (ctypes.c_int * size_a)()
+# print_array(c_int_array_b)
 
 # ADD_INT_ARRAY
 # t0 = time.time()
@@ -82,7 +82,7 @@ print_array(c_char_array_a)
 c_float_array_b = (ctypes.c_float * size_b)()
 print_array(c_float_array_b)
 
-c_convierte(c_char_array_a, size_a, c_float_array_b, size_b)
+c_parse_package(c_char_array_a, size_a, c_float_array_b, size_b)
 print_array(c_float_array_b)
 
 # c_updateArray()
