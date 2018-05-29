@@ -9,7 +9,7 @@ import ctypes
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 
 class Controller(object):
@@ -18,18 +18,22 @@ class Controller(object):
 
         # VIEW
         self._view = view
+
         self._lpane = self._view._lpane
         self._frame_serial = self._lpane._frame_serial
         self._frame_parameters = self._lpane._frame_parameters
         self._frame_commands = self._lpane._frame_commands
 
+        self._rpane = self._view._rpane
+        self._plotest = self._rpane._plotting
+
         # SERIAL
         self._arduino = etc_serial.Serial()
         self._load_ports()
-        # self._read_thread = threading.Thread(
-        #     target=self._read_data_from_serial)
+        self.is_connected = threading.Event()
         self.is_run = True
-        self.thread = None
+        self.read_thread = None
+        # self.read_serial_start()
 
         self.raw_data = bytearray(1)
         self.header = b'\xd1'
@@ -90,26 +94,38 @@ class Controller(object):
                 self.stop_operations()
 
     def start_operations(self):
-        self._db_session = self._model.connect_to_database(False)
-        self.thread = None
+        # self._db_session = self._model.connect_to_database(False)
+        # self.thread = None
         self.is_run = True
-        self._arduino.open_port()
-        self.read_serial_start()
+        try:
+            self.read_serial_start()
+            self._arduino.open_port()
+            self.is_connected.set()
+            # print(self.thread)
+        except Exception as e:
+            print(e)
+        # self.read_serial_start()
 
     def stop_operations(self):
         # Thread close
         self.is_run = False
-        self.thread.join()
+        # print(self.read_thread)
+        self.read_thread.join()
         # Arduino close
         self._arduino.close()
+        # Clear is_connected event (for reading) value
+        self.is_connected.clear()
+
+        # self.thread = None
         # SQLAlchemy session commiting and closing
         try:
             self._db_session.commit()
-        except:
+        except Exception as e:
             self._db_session.rollback()
-            raise
-        finally:
-            self._db_session.close()
+            print(e)
+        # finally:
+        #     self._db_session.close()
+        #     print(self._db_session)
 
         print('Disconnected...')
 
@@ -200,17 +216,26 @@ class Controller(object):
 
     # /////////////// Read data ///////////////
     def background_thread(self):
-        self._arduino.reset_input_buffer()
+        # self._arduino.reset_input_buffer()
+        print('Esperando conexión...')
+        # print(self.thread)
+        self.is_connected.wait()
+
         while self.is_run:
-            self._arduino.readinto(self.raw_data)
+            try:
+                self._arduino.readinto(self.raw_data)
+                self.package_builder()
+            except Exception as e:
+                print(e)
+                break
             # print(self.raw_data)
-            self.package_builder()
 
     def read_serial_start(self):
         # print("THREAD:", self.thread)
-        if self.thread is None:
-            self.thread = threading.Thread(target=self.background_thread)
-            self.thread.start()
+        # if self.thread is None:
+        self.read_thread = threading.Thread(target=self.background_thread)
+        self.read_thread.daemon = True
+        self.read_thread.start()
 
     def package_builder(self):
         received_byte = self.raw_data
@@ -282,29 +307,25 @@ class Controller(object):
                              len(c_float_array_parsed))
         self.print_array(c_float_array_parsed)
 
-        parsed_parameters = []
+        parsed_str_parameters = []
         for i in range(len(self._parameters)):
-            parsed_parameters.append(f'{c_float_array_parsed[i]:.3f}')
+            parsed_str_parameters.append(f'{c_float_array_parsed[i]:.3f}')
             self._model.add_parameter_record(self._db_session,
-                                             parsed_parameters[i],
+                                             parsed_str_parameters[i],
                                              self._parameters[i],
                                              record)
 
-        # Refresh treeiter
-        tv_parameters = self._frame_parameters._tv_parameters
-        store_parameters = tv_parameters.get_model()
+        # Refresh tv_parameters
+        GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
+        # Plot data
+        GLib.idle_add(self._plotest.update_draw, c_float_array_parsed[1])
 
-        rootiter = store_parameters.get_iter_first()
-        store_parameters[rootiter][1] = parsed_parameters[0]
-
-        treeiter = store_parameters.iter_next(rootiter)
-        store_parameters[treeiter][1] = parsed_parameters[1]
-
-        for i in range(2, len(self._parameters)):
-                treeiter = store_parameters.iter_next(treeiter)
-                store_parameters[treeiter][1] = parsed_parameters[i]
-
-        tv_parameters.set_model(store_parameters)
+        # Plot update
+        # self._plotest.update_draw(c_float_array_parsed[1])
+        # self._plotest.data.append(c_float_array_parsed[1])
+        # print(self._plotest.data)
+        # self._plotest.l_data.set_data(range(len(self._plotest.data)), self._plotest.data)
+        # self._plotest.fig.canvas.draw()
 
     def c_parse_package(self, input, size_in, output, size_out):
         self._lib.parse_package.restype = ctypes.c_void_p
@@ -315,3 +336,21 @@ class Controller(object):
         for value in array:
             print(format(value, '.2f'), end=', ')
         print()
+
+    def refresh_tv_parameters(self, parsed_str_parameters):
+        tv_parameters = self._frame_parameters._tv_parameters
+        store_parameters = tv_parameters.get_model()
+
+        rootiter = store_parameters.get_iter_first()
+        store_parameters[rootiter][1] = parsed_str_parameters[0]
+
+        treeiter = store_parameters.iter_next(rootiter)
+        store_parameters[treeiter][1] = parsed_str_parameters[1]
+
+        for i in range(2, len(self._parameters)):
+                treeiter = store_parameters.iter_next(treeiter)
+                store_parameters[treeiter][1] = parsed_str_parameters[i]
+
+        tv_parameters.set_model(store_parameters)
+
+        return False
