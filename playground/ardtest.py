@@ -132,7 +132,7 @@ class ArdTest(object):
 
 def main():
     port = '/dev/ttyACM0'
-    baud = 38400
+    baud = 9600
     arduino = ArdTest(port, baud)
     arduino.read_serial_start()
 
