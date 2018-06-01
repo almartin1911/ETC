@@ -12,7 +12,7 @@ class View_rpane(Gtk.Paned):
 
         self.set_wide_handle(True)
 
-        self._fboxplotcanvas = etc_rpane_fboxplotcanvas.Rpane_plotcanvas()
+        self._fboxplotcanvas = etc_rpane_fboxplotcanvas.Rpane_fboxplotcanvas()
         self.add1(self._fboxplotcanvas)
         self._osmgpsmap = etc_rpane_osmgpsmap.Rpane_osmgpsmap()
         self.add2(self._osmgpsmap)

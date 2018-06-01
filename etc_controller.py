@@ -24,7 +24,7 @@ class Controller(object):
         self._frame_commands = self._lpane._frame_commands
         # Right pane
         self._rpane = self._view._rpane
-        self._fboxplotcanvas = self._rpane._fboxplotcanvas._fb
+        self._fboxplotcanvas = self._rpane._fboxplotcanvas
 
         # SERIAL
         self._arduino = etc_serial.Serial()
@@ -75,6 +75,7 @@ class Controller(object):
         self._view.show_all()
 
         # Draw empty canvases
+        self._plotcanvas_list = []
         self.load_canvases()
 
     # /////////////// Serial ///////////////
@@ -320,7 +321,7 @@ class Controller(object):
         # Refresh tv_parameters
         GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
         # Plot data
-        # GLib.idle_add(self._plotest.update_draw, c_float_array_parsed[1])
+        GLib.idle_add(self.refresh_plots, c_float_array_parsed)
 
         # Plot update
         # self._plotest.update_draw(c_float_array_parsed[1])
@@ -356,3 +357,15 @@ class Controller(object):
         tv_parameters.set_model(store_parameters)
 
         return False
+
+    def load_canvases(self):
+        flowbox = self._fboxplotcanvas._fb
+
+        for parameter in self._parameters:
+            plotcanvas = etc_plotcanvas.PlotCanvas(parameter.name, parameter.symbol)
+            self._plotcanvas_list.append(plotcanvas)
+            flowbox.add(plotcanvas.canvas)
+
+    def refresh_plots(self, c_float_array_parsed):
+        for i in range(len(self._plotcanvas_list)):
+            self._plotcanvas_list[i].update_draw(c_float_array_parsed[i])

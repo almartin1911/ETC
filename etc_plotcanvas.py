@@ -1,3 +1,7 @@
+# import gi
+# gi.require_version('Gtk', '3.0')
+# from gi.repository import Gtk
+
 import matplotlib as mpl
 mpl.use('GTK3Agg')
 
@@ -7,24 +11,28 @@ from matplotlib.figure import Figure
 
 
 class PlotCanvas(object):
-    def __init__(self, **kw):
+    def __init__(self, title, label):
+        # super(PlotCanvas, self).__init__()
         self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
-        self.ax.legend()
+
+        self.ax.set_title(title)
         self.ax.grid(True)
 
         self.canvas = FigureCanvas(self.fig)
         self.canvas.set_size_request(400, 200)
+        self.canvas.show()
 
         self.data = []
         self.line, = self.ax.plot([], self.data)
-        self.line.set_label("LabelTest")
+        self.line.set_label(label)
+        self.ax.legend()
 
     def update_draw(self, *args):
         # print(args[0])
         self.data.append(args[0])
         # print(self.data)
-        self.l_data.set_data(range(len(self.data)), self.data)
+        self.line.set_data(range(len(self.data)), self.data)
         # self.l_data.set_ydata(self.data)
         self.ax.relim()
         self.ax.autoscale_view(True, True, True)
