@@ -1,10 +1,9 @@
 import etc_serial
-# import etc_packages
+import etc_plotcanvas
 
 import sys
 import bitstring
 import threading
-# import time
 import ctypes
 
 import gi
@@ -18,14 +17,14 @@ class Controller(object):
 
         # VIEW
         self._view = view
-
+        # Left pane
         self._lpane = self._view._lpane
         self._frame_serial = self._lpane._frame_serial
         self._frame_parameters = self._lpane._frame_parameters
         self._frame_commands = self._lpane._frame_commands
-
+        # Right pane
         self._rpane = self._view._rpane
-        self._plotest = self._rpane._plotting
+        self._fboxplotcanvas = self._rpane._fboxplotcanvas._fb
 
         # SERIAL
         self._arduino = etc_serial.Serial()
@@ -74,6 +73,9 @@ class Controller(object):
             '/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
 
         self._view.show_all()
+
+        # Draw empty canvases
+        self.load_canvases()
 
     # /////////////// Serial ///////////////
     def _on_btn_refresh_clicked(self, button):
@@ -318,7 +320,7 @@ class Controller(object):
         # Refresh tv_parameters
         GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
         # Plot data
-        GLib.idle_add(self._plotest.update_draw, c_float_array_parsed[1])
+        # GLib.idle_add(self._plotest.update_draw, c_float_array_parsed[1])
 
         # Plot update
         # self._plotest.update_draw(c_float_array_parsed[1])

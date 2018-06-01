@@ -1,13 +1,18 @@
-import etc_rpane_plotting
+import etc_rpane_fboxplotcanvas
+import etc_rpane_osmgpsmap
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 
-class View_rpane(Gtk.Grid):
+class View_rpane(Gtk.Paned):
     def __init__(self):
         super(View_rpane, self).__init__()
 
-        self._plotting = etc_rpane_plotting.Rpane_plotting()
-        self.attach(self._plotting, 0, 0, 1, 1)
+        self.set_wide_handle(True)
+
+        self._fboxplotcanvas = etc_rpane_fboxplotcanvas.Rpane_plotcanvas()
+        self.add1(self._fboxplotcanvas)
+        self._osmgpsmap = etc_rpane_osmgpsmap.Rpane_osmgpsmap()
+        self.add2(self._osmgpsmap)

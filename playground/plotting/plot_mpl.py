@@ -43,9 +43,9 @@ class DynamicPlotter(Gtk.Window):
 
     def getdata(self):
         frequency = 0.5
-        # noise = random.normalvariate(0., 1.)
-        new = 10.*math.sin(time.time()*frequency*2*math.pi)
-        # new = 10.*math.sin(time.time()*frequency*2*math.pi) + noise
+        noise = random.normalvariate(0., 1.)
+        # new = 10.*math.sin(time.time()*frequency*2*math.pi)
+        new = 10.*math.sin(time.time()*frequency*2*math.pi) + noise
         return new
 
     def updateplot(self):

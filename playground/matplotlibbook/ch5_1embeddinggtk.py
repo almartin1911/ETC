@@ -34,9 +34,10 @@ class MyWindow(Gtk.Window):
 
     def build_figure(self):
         ax = self.fig.add_subplot(111)
+        ax.grid(True)
         x = np.arange(0, 2*np.pi, .01)
         y = np.sin(x**2)*np.exp(-x)
-        ax.plot(x, y)
+        l, = ax.plot(x, y)
 
 
 win = MyWindow()
