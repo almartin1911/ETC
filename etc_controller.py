@@ -323,13 +323,6 @@ class Controller(object):
         # Plot data
         GLib.idle_add(self.refresh_plots, c_float_array_parsed)
 
-        # Plot update
-        # self._plotest.update_draw(c_float_array_parsed[1])
-        # self._plotest.data.append(c_float_array_parsed[1])
-        # print(self._plotest.data)
-        # self._plotest.l_data.set_data(range(len(self._plotest.data)), self._plotest.data)
-        # self._plotest.fig.canvas.draw()
-
     def c_parse_package(self, input, size_in, output, size_out):
         self._lib.parse_package.restype = ctypes.c_void_p
         self._lib.parse_package(input, size_in, output, size_out)
@@ -362,7 +355,8 @@ class Controller(object):
         flowbox = self._fboxplotcanvas._fb
 
         for parameter in self._parameters:
-            plotcanvas = etc_plotcanvas.PlotCanvas(parameter.name, parameter.symbol)
+            plotcanvas = etc_plotcanvas.PlotCanvas(parameter.name,
+                                                   parameter.symbol)
             self._plotcanvas_list.append(plotcanvas)
             flowbox.add(plotcanvas.canvas)
 
