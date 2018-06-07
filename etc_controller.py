@@ -1,6 +1,7 @@
 import etc_serial
 import etc_plotcanvas
 
+from color_constants import colors
 import sys
 import bitstring
 import threading
@@ -27,7 +28,9 @@ class Controller(object):
         self._fboxplotcanvas = self._rpane._fboxplotcanvas
 
         # SERIAL
-        self._arduino = etc_serial.Serial()
+        self._frame_serial._progress_bar.set_text('Pulso de paquetes')
+        t = None
+        self._arduino = etc_serial.Serial(timeout=t)
         self._load_ports()
         self.is_connected = threading.Event()
         self.is_run = True
@@ -161,6 +164,12 @@ class Controller(object):
         except TypeError:
             print("No connected devices")
 
+    def _update_progress_bar(self, ok, bad):
+        self._frame_serial._progress_bar.pulse()
+        self._frame_serial._progress_bar.set_text(str(ok) + u'\u2714' + ' '
+                                                  + str(bad) + u'\u2716')
+        return False
+
     # /////////////// Parameters ///////////////
     def _get_parameters(self):
         return self._db_session.query(self._model.Parameter).all()
@@ -220,9 +229,10 @@ class Controller(object):
     # /////////////// Read data ///////////////
     def background_thread(self):
         # self._arduino.reset_input_buffer()
-        print('Esperando conexión...')
+        print('Waiting for connection...')
         # print(self.thread)
         self.is_connected.wait()
+        print('Connected!')
 
         while self.is_run:
             try:
@@ -259,14 +269,18 @@ class Controller(object):
             self.package_pointer = 0
 
             if self.is_header:
-                checksum_value = bytes([self.package[self.package_size - 1]])
-
-                if self.verify_checksum(checksum_value):
-                    self.package_counter += 1
-                    self.handle_package()
-                else:
-                    self.bad_package_counter += 1
-
+                self.package_counter += 1
+                self.handle_package()
+                # checksum_value = bytes([self.package[self.package_size - 1]])
+                #
+                # if self.verify_checksum(checksum_value):
+                #     self.package_counter += 1
+                #     self.handle_package()
+                # else:
+                #     self.bad_package_counter += 1
+                GLib.idle_add(self._update_progress_bar,
+                              self.package_counter,
+                              self.bad_package_counter)
                 self.is_header = False
                 self.first_time_header = False
 
@@ -292,7 +306,9 @@ class Controller(object):
         # bitstream_package = bitstring.BitStream(self.package.tobytes())
         print('#', self.package_counter, ':', bitstream_package,
               len(bitstream_package))
-        print("Lost packages:", self.bad_package_counter)
+        # print("Lost packages:", self.bad_package_counter)
+        for value in self.package:
+            print(value, end=' ')
 
         # Add raw record
         record = self._model.add_record(self._db_session,
@@ -300,15 +316,21 @@ class Controller(object):
                                         self._command, self._user_exec)
 
         # Parse package
+        # Package_woh is package without the header
+        package_woh = self.package[1:]
+        # print(len(package_woh))
         c_chr_array_package = (ctypes.c_char
-                               * len(self.package))(*self.package)
+                               * len(package_woh))(*package_woh)
         # size = 16
         c_float_array_parsed = (ctypes.c_float * len(self._parameters))()
+        # print(c_chr_array_package, len(c_chr_array_package), c_float_array_parsed, len(c_float_array_parsed))
         self.c_parse_package(c_chr_array_package,
                              len(c_chr_array_package),
                              c_float_array_parsed,
                              len(c_float_array_parsed))
+        print()
         self.print_array(c_float_array_parsed)
+        print()
 
         parsed_str_parameters = []
         for i in range(len(self._parameters)):
@@ -353,12 +375,33 @@ class Controller(object):
 
     def load_canvases(self):
         flowbox = self._fboxplotcanvas._fb
+        c = 0
+        colors_list = [colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt']
+                       ]
 
         for parameter in self._parameters:
             plotcanvas = etc_plotcanvas.PlotCanvas(parameter.name,
-                                                   parameter.symbol)
+                                                   parameter.symbol,
+                                                   parameter.unit,
+                                                   colors_list[c].hex_format())
             self._plotcanvas_list.append(plotcanvas)
             flowbox.add(plotcanvas.canvas)
+            c += 1
 
     def refresh_plots(self, c_float_array_parsed):
         for i in range(len(self._plotcanvas_list)):

@@ -30,19 +30,26 @@ class Lpane_frameserial(Gtk.Frame):
                                                  Gtk.IconSize.BUTTON)
         self._btn_refresh.set_image(refresh_image)
         self._btn_refresh.connect("clicked", self._on_btn_refresh_clicked)
-        self._grid.attach(self._btn_refresh, 2, 0, 1, 1)
+        self._grid.attach_next_to(self._btn_refresh, self._cbox_ports, Gtk.PositionType.RIGHT, 1, 1)
 
         self._switch_serial = Gtk.Switch()
         self._switch_serial.connect("notify::active",
                                     self._on_switch_serial_toggled)
-        self._grid.attach(self._switch_serial, 0, 1, 2, 1)
+        # self._switch_serial.set_halign(Gtk.Align.FILL)
+        # self._switch_serial.set_hexpand(True)
+        self._grid.attach(self._switch_serial, 0, 1, 3, 1)
+        # self._grid.attach_next_to(self._switch_serial, self._cbox_ports, Gtk.PositionType.BOTTOM, 1, 1)
 
-        self._btn_config = Gtk.Button()
-        config_icon = Gio.ThemedIcon(name="emblem-system-symbolic")
-        config_image = Gtk.Image.new_from_gicon(config_icon,
-                                                Gtk.IconSize.BUTTON)
-        self._btn_config.set_image(config_image)
-        self._grid.attach(self._btn_config, 2, 1, 1, 1)
+        # TODO: Serial connection configuration
+        # self._btn_config = Gtk.Button()
+        # config_icon = Gio.ThemedIcon(name="emblem-system-symbolic")
+        # config_image = Gtk.Image.new_from_gicon(config_icon,
+        #                                         Gtk.IconSize.BUTTON)
+        # self._btn_config.set_image(config_image)
+        # self._grid.attach(self._btn_config, 2, 1, 1, 1)
+
+        self._progress_bar = Gtk.ProgressBar(show_text=True)
+        self._grid.attach(self._progress_bar, 0, 2, 3, 1)
 
     def _on_cbox_ports_changed(self, cbox):
         self.emit('cbox-ports-changed')

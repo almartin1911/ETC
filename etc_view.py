@@ -5,6 +5,10 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 
+settings = Gtk.Settings.get_default()
+settings.set_property("gtk-theme-name", "Adwaita")
+# settings.set_property("gtk-theme-name", "Adwaita-dark")
+
 
 class View(Gtk.ApplicationWindow):
     def __init__(self, **kw):
@@ -33,9 +37,10 @@ class View(Gtk.ApplicationWindow):
         # Adding grid to window
         self.add(self._grid)
 
+        # TODO: An interactive Infobar
         # A Gtk.InfoBar as top statusbar
         self._infobar = Gtk.InfoBar()
-        self._infobar.set_message_type(Gtk.MessageType.WARNING)
+        self._infobar.set_message_type(Gtk.MessageType.INFO)
         infobar_label = Gtk.Label("Barra de estado")
         infobar_content = self._infobar.get_content_area()
         infobar_content.add(infobar_label)
@@ -44,7 +49,7 @@ class View(Gtk.ApplicationWindow):
 
         # An horizontal Gtk.Paned as secondary container
         self._hpaned = Gtk.Paned()
-        self._hpaned.set_wide_handle(True)
+        # self._hpaned.set_wide_handle(True)
         # Attaching self._hpaned to grid
         self._grid.attach(self._hpaned, 0, 1, 1, 1)
         # Adding panes to self._hpaned
