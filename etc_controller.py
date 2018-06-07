@@ -116,7 +116,12 @@ class Controller(object):
         # Thread close
         self.is_run = False
         # print(self.read_thread)
-        self.read_thread.join()
+        # # try:
+        # #     self.read_thread.join()
+        # # except Exception as e:
+        # #     print(e)
+        # # # self.read_thread.join()
+        # print('OK')
         # Arduino close
         self._arduino.close()
         # Clear is_connected event (for reading) value
@@ -247,7 +252,7 @@ class Controller(object):
         # print("THREAD:", self.thread)
         # if self.thread is None:
         self.read_thread = threading.Thread(target=self.background_thread)
-        self.read_thread.daemon = True
+        # self.read_thread.daemon = True
         self.read_thread.start()
 
     def package_builder(self):
