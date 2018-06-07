@@ -17,6 +17,7 @@ pandas = "*"
 cairocffi = "*"
 ipykernel = "*"
 psutil = "*"
+colorlog = "*"
 
 [dev-packages]
 
