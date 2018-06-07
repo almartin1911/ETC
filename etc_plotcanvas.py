@@ -43,7 +43,7 @@ class PlotCanvas(object):
         self.line.set_color(color)
         # self.ax.set_xlabel("# de Muestras")
         # self.ax.set_ylabel(f"[{unit}]")
-        self.ax.legend(loc=2)
+        self.ax.legend(loc='upper right')
 
     def update_draw(self, *args):
         # print(args[0])

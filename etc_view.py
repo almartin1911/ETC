@@ -14,7 +14,7 @@ class View(Gtk.ApplicationWindow):
     def __init__(self, **kw):
         # App data
         win_title = "Estación Terrena Chitisat"
-        win_subtitle = "v0.4"
+        win_subtitle = "v0.4.5"
 
         # Init window and headerbar
         super(View, self).__init__(**kw)
