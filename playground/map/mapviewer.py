@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """
 Copyright (C) Hadley Rich 2008 <hads@nice.net.nz>
 based on main.c - with thanks to John Stowers
@@ -21,23 +19,33 @@ import sys
 import os.path
 import random
 from math import pi
+import gi
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('OsmGpsMap', '1.0')
+
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
 
-GObject.threads_init()
-Gdk.threads_init()
+# Deprecated since PyGObject v3.11
+# GObject.threads_init()
+# Gdk.threads_init()
 
 from gi.repository import OsmGpsMap as osmgpsmap
-print "using library: %s (version %s)" % (osmgpsmap.__file__, osmgpsmap._version)
+print(f"using library: {osmgpsmap.__file__} (version {osmgpsmap._version})")
 
 assert osmgpsmap._version == "1.0"
+
 
 class DummyMapNoGpsPoint(osmgpsmap.Map):
     def do_draw_gps_point(self, drawable):
         pass
+
+
 GObject.type_register(DummyMapNoGpsPoint)
+
 
 class DummyLayer(GObject.GObject, osmgpsmap.MapLayer):
     def __init__(self):
@@ -54,7 +62,10 @@ class DummyLayer(GObject.GObject, osmgpsmap.MapLayer):
 
     def do_button_press(self, gpsmap, gdkeventbutton):
         return False
+
+
 GObject.type_register(DummyLayer)
+
 
 class UI(Gtk.Window):
     def __init__(self):
@@ -67,10 +78,11 @@ class UI(Gtk.Window):
         self.vbox = Gtk.VBox(False, 0)
         self.add(self.vbox)
 
-        if 0:
-            self.osm = DummyMapNoGpsPoint()
-        else:
-            self.osm = osmgpsmap.Map(user_agent="mapviewer.py/%s" % osmgpsmap._version)
+        self.osm = DummyMapNoGpsPoint()
+        # if 0:
+        #     self.osm = DummyMapNoGpsPoint()
+        # else:
+        #     self.osm = osmgpsmap.Map(user_agent="mapviewer.py/%s" % osmgpsmap._version)
         self.osm.layer_add(
                     osmgpsmap.MapOsd(
                         show_dpad=True,
@@ -189,16 +201,17 @@ Enter an repository URL to fetch map tiles from in the box below. Special metach
         format = self.image_format_entry.get_text()
         if uri and format:
             if self.osm:
-                #remove old map
+                # remove old map
                 self.vbox.remove(self.osm)
             try:
                 self.osm = osmgpsmap.Map(
                     repo_uri=uri,
                     image_format=format
                 )
-            except Exception, e:
-                print "ERROR:", e
-                self.osm = osm.Map()
+            except Exception as e:
+                print("ERROR:", e)
+                # self.osm = osm.Map()
+                self.osm = osmgpsmap.Map()
 
             self.vbox.pack_start(self.osm, True, True, 0)
             self.osm.connect('button_release_event', self.map_clicked)
@@ -206,31 +219,36 @@ Enter an repository URL to fetch map tiles from in the box below. Special metach
 
     def print_tiles(self):
         if self.osm.props.tiles_queued != 0:
-            print self.osm.props.tiles_queued, 'tiles queued'
+            print(self.osm.props.tiles_queued, 'tiles queued')
         return True
 
     def zoom_in_clicked(self, button):
         self.osm.set_zoom(self.osm.props.zoom + 1)
- 
+
     def zoom_out_clicked(self, button):
         self.osm.set_zoom(self.osm.props.zoom - 1)
 
     def home_clicked(self, button):
-        self.osm.set_center_and_zoom(-44.39, 171.25, 12)
+        # Cota-Cota
+        p = [-16.538275, -68.069592]
+        # self.osm.set_center_and_zoom(-44.39, 171.25, 12)
+        self.osm.set_center_and_zoom(p[0], p[1], 18)
 
     def on_query_tooltip(self, widget, x, y, keyboard_tip, tooltip, data=None):
         if keyboard_tip:
             return False
 
         if self.show_tooltips:
-            p = osmgpsmap.point_new_degrees(0.0, 0.0)
-            self.osm.convert_screen_to_geographic(x, y, p)
-            lat,lon = p.get_degrees()
-            tooltip.set_markup("%+.4f, %+.4f" % (lat, lon ))
+            p = osmgpsmap.MapPoint()
+            p.set_degrees(0.0, 0.0)
+            # self.osm.convert_screen_to_geographic(x, y, p)
+            p = self.osm.convert_screen_to_geographic(x, y)
+            lat, lon = p.get_degrees()
+            tooltip.set_markup("%+.4f, %+.4f" % (lat, lon))
             return True
 
         return False
- 
+
     def cache_clicked(self, button):
         bbox = self.osm.get_bbox()
         self.osm.download_maps(
@@ -249,13 +267,15 @@ Enter an repository URL to fetch map tiles from in the box below. Special metach
 
     def on_button_press(self, osm, event):
         state = event.get_state()
-        lat,lon = self.osm.get_event_location(event).get_degrees()
+        lat, lon = self.osm.get_event_location(event).get_degrees()
 
-        left    = event.button == 1 and state == 0
-        middle  = event.button == 2 or (event.button == 1 and state & Gdk.ModifierType.SHIFT_MASK)
-        right   = event.button == 3 or (event.button == 1 and state & Gdk.ModifierType.CONTROL_MASK)
+        left = event.button == 1 and state == 0
+        middle = event.button == 2 or (event.button == 1 and state
+                                       & Gdk.ModifierType.SHIFT_MASK)
+        right = event.button == 3 or (event.button == 1 and state
+                                      & Gdk.ModifierType.CONTROL_MASK)
 
-        #work around binding bug with invalid variable name
+        # work around binding bug with invalid variable name
         GDK_2BUTTON_PRESS = getattr(Gdk.EventType, "2BUTTON_PRESS")
         GDK_3BUTTON_PRESS = getattr(Gdk.EventType, "3BUTTON_PRESS")
 
@@ -268,8 +288,9 @@ Enter an repository URL to fetch map tiles from in the box below. Special metach
             if left:
                 self.osm.gps_add(lat, lon, heading=random.random()*360)
             if middle:
-                pb = GdkPixbuf.Pixbuf.new_from_file_at_size ("poi.png", 24,24)
-                self.last_image = self.osm.image_add(lat,lon,pb)
+                pb = GdkPixbuf.Pixbuf.new_from_file_at_size("poi.png",
+                                                            24, 24)
+                self.last_image = self.osm.image_add(lat, lon, pb)
             if right:
                 pass
 
@@ -277,7 +298,6 @@ Enter an repository URL to fetch map tiles from in the box below. Special metach
 if __name__ == "__main__":
     u = UI()
     u.show_all()
-    if os.name == "nt": Gdk.threads_enter()
+    # if os.name == "nt": Gdk.threads_enter()
     Gtk.main()
-    if os.name == "nt": Gdk.threads_leave()
-
+    # if os.name == "nt": Gdk.threads_leave()
