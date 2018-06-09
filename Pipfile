@@ -8,16 +8,10 @@ pycairo = "*"
 pygobject = "*"
 pyserial = "*"
 sqlalchemy = "*"
-pyserial-asyncio = "*"
 bitstring = "*"
 numpy = "*"
 matplotlib = "*"
-drawnow = "*"
-pandas = "*"
 cairocffi = "*"
-ipykernel = "*"
-psutil = "*"
-colorlog = "*"
 
 [dev-packages]
 

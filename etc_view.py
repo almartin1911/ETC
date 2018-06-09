@@ -14,7 +14,7 @@ class View(Gtk.ApplicationWindow):
     def __init__(self, **kw):
         # App data
         win_title = "Estación Terrena Chitisat"
-        win_subtitle = "v0.4.5"
+        win_subtitle = "v0.4.6"
 
         # Init window and headerbar
         super(View, self).__init__(**kw)
@@ -57,3 +57,6 @@ class View(Gtk.ApplicationWindow):
         self._hpaned.add1(self._lpane)
         self._rpane = etc_view_rpane.View_rpane()
         self._hpaned.add2(self._rpane)
+
+        # Misc window settings
+        self.maximize()

@@ -73,7 +73,7 @@ class Controller(object):
         # C LIBRARY INTERACTION
         # TODO: Relative path
         self._lib = ctypes.CDLL(
-            '/home/amartin1911/dev/ETC/playground/cpython/libreria.so')
+            '/home/amartin1911/dev/ETC/libreria.so')
 
         self._view.show_all()
 
@@ -252,7 +252,7 @@ class Controller(object):
         # print("THREAD:", self.thread)
         # if self.thread is None:
         self.read_thread = threading.Thread(target=self.background_thread)
-        # self.read_thread.daemon = True
+        self.read_thread.daemon = True
         self.read_thread.start()
 
     def package_builder(self):
