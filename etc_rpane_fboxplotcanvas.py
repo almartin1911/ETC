@@ -11,6 +11,8 @@ class Rpane_fboxplotcanvas(Gtk.ScrolledWindow):
 
         self._fb = Gtk.FlowBox()
         self._fb.set_valign(Gtk.Align.START)
+        # self._fb.set_max_children_per_line(2)
+        self._fb.set_min_children_per_line(2)
         self._fb.set_selection_mode(Gtk.SelectionMode.NONE)
 
         self.add(self._fb)

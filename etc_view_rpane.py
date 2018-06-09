@@ -1,5 +1,5 @@
 import etc_rpane_fboxplotcanvas
-import etc_rpane_osmgpsmap
+import etc_rpane_mapbox
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -14,5 +14,5 @@ class View_rpane(Gtk.Paned):
 
         self._fboxplotcanvas = etc_rpane_fboxplotcanvas.Rpane_fboxplotcanvas()
         self.add1(self._fboxplotcanvas)
-        self._osmgpsmap = etc_rpane_osmgpsmap.Rpane_osmgpsmap()
-        self.add2(self._osmgpsmap)
+        self._mapbox = etc_rpane_mapbox.Rpane_mapbox()
+        self.add2(self._mapbox)

@@ -6,10 +6,13 @@ import sys
 import bitstring
 import threading
 import ctypes
+import random
 
 import gi
 gi.require_version('Gtk', '3.0')
+gi.require_version('OsmGpsMap', '1.0')
 from gi.repository import Gtk, GLib
+from gi.repository import OsmGpsMap as ogm
 
 
 class Controller(object):
@@ -26,6 +29,7 @@ class Controller(object):
         # Right pane
         self._rpane = self._view._rpane
         self._fboxplotcanvas = self._rpane._fboxplotcanvas
+        self._mapbox = self._rpane._mapbox
 
         # SERIAL
         self._frame_serial._progress_bar.set_text('Pulso de paquetes')
@@ -69,6 +73,8 @@ class Controller(object):
                                    self._on_cbox_ports_changed)
         self._frame_serial.connect('switch-serial-toggled',
                                    self._on_switch_serial_toggled)
+        self._mapbox.connect('btn_launch_site_clicked',
+                             self._on_btn_launch_site_clicked)
 
         # C LIBRARY INTERACTION
         # TODO: Relative path
@@ -80,6 +86,14 @@ class Controller(object):
         # Draw empty canvases
         self._plotcanvas_list = []
         self.load_canvases()
+
+        # Setup map
+        self.launch_site = [-16.538275, -68.069592]
+        self.map = self._mapbox.map
+        self.setup_map()
+        # Just for testing
+        self.lat = self.launch_site[0]
+        self.lon = self.launch_site[1]
 
     # /////////////// Serial ///////////////
     def _on_btn_refresh_clicked(self, button):
@@ -349,6 +363,11 @@ class Controller(object):
         GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
         # Plot data
         GLib.idle_add(self.refresh_plots, c_float_array_parsed)
+        # Draw gps point
+        GLib.idle_add(self.add_gps_point, self.lat, self.lon)
+        # Just for testing
+        self.lat += 0.00005
+        self.lon += 0.00005
 
     def c_parse_package(self, input, size_in, output, size_out):
         self._lib.parse_package.restype = ctypes.c_void_p
@@ -378,6 +397,7 @@ class Controller(object):
 
         return False
 
+    # /////////////// Plotting ///////////////
     def load_canvases(self):
         flowbox = self._fboxplotcanvas._fb
         c = 0
@@ -411,3 +431,45 @@ class Controller(object):
     def refresh_plots(self, c_float_array_parsed):
         for i in range(len(self._plotcanvas_list)):
             self._plotcanvas_list[i].update_draw(c_float_array_parsed[i])
+
+    # /////////////// Map track ///////////////
+    def setup_map(self):
+        # map = self._mapbox.map
+        self.layer_osd = ogm.MapOsd(show_dpad=True,
+                                    show_zoom=True,
+                                    show_crosshair=True,
+                                    show_coordinates=True,
+                                    show_scale=True)
+        self.map.layer_add(self.layer_osd)
+        max_zoom = self.map.props.max_zoom
+        self.map.set_center_and_zoom(self.launch_site[0], self.launch_site[1],
+                                     max_zoom)
+        # map.props.record_trip_history = True
+        # map.props.show_trip_history = True
+        self.map.connect('button_press_event', self.on_button_press)
+        # self.map.connect('button_release_event', self.on_button_release)
+
+    def update_lbl_coords(self, lat, lon):
+        lbl_coords = self._mapbox.lbl_coords
+        lbl_coords.set_text('Latitud: %s \nLongitud: %s' % (lat, lon))
+
+    def on_button_press(self, osm, event):
+        if event.button == 1:  # LEFT
+            pass
+        elif event.button == 3:  # RIGHT
+            lat, lon = self.map.get_event_location(event).get_degrees()
+            self.update_lbl_coords(lat, lon)
+
+    def _on_btn_launch_site_clicked(self, button):
+        max_zoom = self.map.props.max_zoom
+        self.map.set_center_and_zoom(self.launch_site[0], self.launch_site[1],
+                                     max_zoom)
+
+    def add_gps_point(self, lat, lon):
+        mpoint = ogm.MapPoint()
+        mpoint.set_degrees(lat, lon)
+        self.map.gps_add(lat, lon, heading=random.random()*360)
+
+        self.update_lbl_coords(lat, lon)
+
+        return False
