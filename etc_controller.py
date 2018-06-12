@@ -42,7 +42,9 @@ class Controller(object):
         # self.read_serial_start()
 
         self.raw_data = bytearray(1)
-        self.header = b'\xd1'
+        # TODO: Dinamically generate headers trough DB
+        self.headers = [b'\xd1', b'\xd2']
+        # self.header = b'\xd1'
         self.package_size = 31
         # self.package = numpy.empty(dtype=numpy.uint8,
         #                            shape=self.package_size)
@@ -81,8 +83,6 @@ class Controller(object):
         self._lib = ctypes.CDLL(
             '/home/amartin1911/dev/ETC/libreria.so')
 
-        self._view.show_all()
-
         # Draw empty canvases
         self._plotcanvas_list = []
         self.load_canvases()
@@ -94,6 +94,8 @@ class Controller(object):
         # Just for testing
         self.lat = self.launch_site[0]
         self.lon = self.launch_site[1]
+
+        self._view.show_all()
 
     # /////////////// Serial ///////////////
     def _on_btn_refresh_clicked(self, button):
@@ -273,7 +275,8 @@ class Controller(object):
         received_byte = self.raw_data
         # print(self.package_pointer, received_byte, end=", ")
 
-        if received_byte == self.header:
+        # if received_byte == self.header:
+        if received_byte in self.headers:
             if not self.first_time_header:
                 self.is_header = True
                 self.package_pointer = 0
@@ -363,11 +366,15 @@ class Controller(object):
         GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
         # Plot data
         GLib.idle_add(self.refresh_plots, c_float_array_parsed)
-        # Draw gps point
-        GLib.idle_add(self.add_gps_point, self.lat, self.lon)
+
         # Just for testing
-        self.lat += 0.00005
-        self.lon += 0.00005
+        a = int.from_bytes(self.headers[1], byteorder=sys.byteorder)
+        print(self.package[0], a)
+        if self.package[0] == a:
+            # Draw gps point
+            GLib.idle_add(self.add_gps_point, self.lat, self.lon)
+            self.lat += 0.00002
+            self.lon += 0.00002
 
     def c_parse_package(self, input, size_in, output, size_out):
         self._lib.parse_package.restype = ctypes.c_void_p
@@ -468,7 +475,7 @@ class Controller(object):
     def add_gps_point(self, lat, lon):
         mpoint = ogm.MapPoint()
         mpoint.set_degrees(lat, lon)
-        self.map.gps_add(lat, lon, heading=random.random()*360)
+        self.map.gps_add(lat, lon, heading=ogm.MAP_INVALID)
 
         self.update_lbl_coords(lat, lon)
 
