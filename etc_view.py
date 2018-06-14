@@ -40,8 +40,8 @@ class View(Gtk.ApplicationWindow):
         # TODO: An interactive Infobar
         # A Gtk.InfoBar as top statusbar
         self._infobar = Gtk.InfoBar()
-        self._infobar.set_message_type(Gtk.MessageType.INFO)
-        infobar_label = Gtk.Label("Barra de estado")
+        # self._infobar.set_message_type(Gtk.MessageType.ERROR)
+        infobar_label = Gtk.Label()
         infobar_content = self._infobar.get_content_area()
         infobar_content.add(infobar_label)
         # Attaching _infobar to grid

@@ -32,7 +32,7 @@ class Controller(object):
         self._mapbox = self._rpane._mapbox
 
         # SERIAL
-        self._frame_serial._progress_bar.set_text('Pulso de paquetes')
+        # self._frame_serial._progress_bar.set_text('Pulso de paquetes')
         t = None
         self._arduino = etc_serial.Serial(timeout=t)
         self._load_ports()
@@ -44,6 +44,8 @@ class Controller(object):
         self.raw_data = bytearray(1)
         # TODO: Dinamically generate headers trough DB
         self.headers = [b'\xd1', b'\xd2']
+        self.head1 = int.from_bytes(self.headers[0], byteorder=sys.byteorder)
+        self.head2 = int.from_bytes(self.headers[1], byteorder=sys.byteorder)
         # self.header = b'\xd1'
         self.package_size = 31
         # self.package = numpy.empty(dtype=numpy.uint8,
@@ -56,11 +58,21 @@ class Controller(object):
         self.first_time_header = False
 
         self.bad_package_counter = 0
+        self.pck1_ok = 0
+        self.pck2_ok = 0
 
         # DATABASE
         # False parameter: no debug
         self._db_session = self._model.connect_to_database(False)
         self._parameters = self._get_parameters()
+
+        # TODO: Remove this patch after DB refactor
+        self._parameters_1 = self._parameters[:16]
+        # print(len(self._parameters_1))
+        # print(self._parameters_1)
+        self._parameters_2 = self._parameters[:10] + [self._parameters[13]] + self._parameters[16:]
+        # print(len(self._parameters_2))
+        # print(self._parameters_2)
         # print(self._parameters, len(self._parameters))
         # TODO: Real management of commands and users
         self._command = self._db_session.query(self._model.Command).first()
@@ -81,7 +93,7 @@ class Controller(object):
         # C LIBRARY INTERACTION
         # TODO: Relative path
         self._lib = ctypes.CDLL(
-            '/home/amartin1911/dev/ETC/libreria.so')
+            '/home/amartin1911/dev/ETC/c_library.so')
 
         # Draw empty canvases
         self._plotcanvas_list = []
@@ -95,7 +107,28 @@ class Controller(object):
         self.lat = self.launch_site[0]
         self.lon = self.launch_site[1]
 
+        # SETUP INFOBAR
+        self._infobar = self._view._infobar
+        self.update_infobar(0)
+
         self._view.show_all()
+
+    def update_infobar(self, val):
+        state = "INFO: "
+        if val == 0:
+            message_type = Gtk.MessageType.ERROR
+            state += "No hay conexión con la Estación Terrena"
+        elif val == 1:
+            message_type = Gtk.MessageType.WARNING
+            state += "Conexión establecida. Esperando tramas..."
+        elif val == 2:
+            message_type = Gtk.MessageType.INFO
+            state += "Recibiendo tramas..."
+
+        self._infobar.set_message_type(message_type)
+        content = self._infobar.get_content_area()
+        label = content.get_children()[0]
+        label.set_text(state)
 
     # /////////////// Serial ///////////////
     def _on_btn_refresh_clicked(self, button):
@@ -123,6 +156,7 @@ class Controller(object):
             self.read_serial_start()
             self._arduino.open_port()
             self.is_connected.set()
+            self.update_infobar(1)
             # print(self.thread)
         except Exception as e:
             print(e)
@@ -142,6 +176,7 @@ class Controller(object):
         self._arduino.close()
         # Clear is_connected event (for reading) value
         self.is_connected.clear()
+        self.update_infobar(0)
 
         # self.thread = None
         # SQLAlchemy session commiting and closing
@@ -185,10 +220,12 @@ class Controller(object):
         except TypeError:
             print("No connected devices")
 
-    def _update_progress_bar(self, ok, bad):
+    def _update_progress_bar(self):
         self._frame_serial._progress_bar.pulse()
-        self._frame_serial._progress_bar.set_text(str(ok) + u'\u2714' + ' '
-                                                  + str(bad) + u'\u2716')
+        s = f"T1: {self.pck1_ok}, T2: {self.pck2_ok}\nTOTAL: {self.package_counter} \u2714"
+        self._frame_serial._progress_bar.set_text(s)
+        # self._frame_serial._progress_bar.set_text(str(ok) + u'\u2714' + ' '
+        #                                           + str(bad) + u'\u2716')
         return False
 
     # /////////////// Parameters ///////////////
@@ -202,7 +239,7 @@ class Controller(object):
 
         # Populating parameters_store
         default_value = "0.00"
-        for parameter in self._parameters:
+        for parameter in self._parameters_1:
             symbol = parameter.symbol
             unit = parameter.unit
             parameters_store.append([symbol, default_value, unit])
@@ -258,6 +295,7 @@ class Controller(object):
         while self.is_run:
             try:
                 self._arduino.readinto(self.raw_data)
+                # print(self.raw_data)
                 self.package_builder()
             except Exception as e:
                 print(e)
@@ -300,9 +338,7 @@ class Controller(object):
                 #     self.handle_package()
                 # else:
                 #     self.bad_package_counter += 1
-                GLib.idle_add(self._update_progress_bar,
-                              self.package_counter,
-                              self.bad_package_counter)
+                GLib.idle_add(self._update_progress_bar)
                 self.is_header = False
                 self.first_time_header = False
 
@@ -340,45 +376,22 @@ class Controller(object):
         # Parse package
         # Package_woh is package without the header
         package_woh = self.package[1:]
-        # print(len(package_woh))
-        c_chr_array_package = (ctypes.c_char
-                               * len(package_woh))(*package_woh)
-        # size = 16
-        c_float_array_parsed = (ctypes.c_float * len(self._parameters))()
-        # print(c_chr_array_package, len(c_chr_array_package), c_float_array_parsed, len(c_float_array_parsed))
-        self.c_parse_package(c_chr_array_package,
-                             len(c_chr_array_package),
-                             c_float_array_parsed,
-                             len(c_float_array_parsed))
-        print()
-        self.print_array(c_float_array_parsed)
-        print()
+        GLib.idle_add(self.update_infobar, 2)
 
-        parsed_str_parameters = []
-        for i in range(len(self._parameters)):
-            parsed_str_parameters.append(f'{c_float_array_parsed[i]:.3f}')
-            self._model.add_parameter_record(self._db_session,
-                                             parsed_str_parameters[i],
-                                             self._parameters[i],
-                                             record)
+        if self.package[0] == self.head1:
+            self.package_1(record, package_woh)
+            self.pck1_ok += 1
+        elif self.package[0] == self.head2:
+            self.package_2(record, package_woh)
+            self.pck2_ok += 1
 
-        # Refresh tv_parameters
-        GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
-        # Plot data
-        GLib.idle_add(self.refresh_plots, c_float_array_parsed)
+    def c_parse_package_1(self, input, size_in, output, size_out):
+        self._lib.parse_package_1.restype = ctypes.c_void_p
+        self._lib.parse_package_1(input, size_in, output, size_out)
 
-        # Just for testing
-        a = int.from_bytes(self.headers[1], byteorder=sys.byteorder)
-        print(self.package[0], a)
-        if self.package[0] == a:
-            # Draw gps point
-            GLib.idle_add(self.add_gps_point, self.lat, self.lon)
-            self.lat += 0.00002
-            self.lon += 0.00002
-
-    def c_parse_package(self, input, size_in, output, size_out):
-        self._lib.parse_package.restype = ctypes.c_void_p
-        self._lib.parse_package(input, size_in, output, size_out)
+    def c_parse_package_2(self, input, size_in, output, size_out):
+        self._lib.parse_package_2.restype = ctypes.c_void_p
+        self._lib.parse_package_2(input, size_in, output, size_out)
 
     def print_array(self, array):
         print(len(array), end=' | ')
@@ -396,13 +409,107 @@ class Controller(object):
         treeiter = store_parameters.iter_next(rootiter)
         store_parameters[treeiter][1] = parsed_str_parameters[1]
 
-        for i in range(2, len(self._parameters)):
+        for i in range(2, len(self._parameters_1)):
                 treeiter = store_parameters.iter_next(treeiter)
                 store_parameters[treeiter][1] = parsed_str_parameters[i]
 
         tv_parameters.set_model(store_parameters)
 
         return False
+
+    def refresh_tv_parameters_2(self, parsed_str_parameters):
+        tv_parameters = self._frame_parameters._tv_parameters
+        store_parameters = tv_parameters.get_model()
+
+        rootiter = store_parameters.get_iter_first()
+        store_parameters[rootiter][1] = parsed_str_parameters[0]
+
+        treeiter = store_parameters.iter_next(rootiter)
+        store_parameters[treeiter][1] = parsed_str_parameters[1]
+
+        for i in range(2, len(self._parameters_2)-4):
+                treeiter = store_parameters.iter_next(treeiter)
+                store_parameters[treeiter][1] = parsed_str_parameters[i]
+
+        treeiter = store_parameters.iter_next(treeiter)
+        treeiter = store_parameters.iter_next(treeiter)
+        treeiter = store_parameters.iter_next(treeiter)
+        treeiter = store_parameters.iter_next(treeiter)
+        store_parameters[treeiter][1] = parsed_str_parameters[10]
+
+        tv_parameters.set_model(store_parameters)
+
+        return False
+
+    def package_1(self, record, package_woh):
+        # print(len(package_woh))
+        c_chr_array_package = (ctypes.c_char
+                               * len(package_woh))(*package_woh)
+        # size = 16
+        c_float_array_parsed = (ctypes.c_float * len(self._parameters_1))()
+        # print(c_chr_array_package, len(c_chr_array_package), c_float_array_parsed, len(c_float_array_parsed))
+        self.c_parse_package_1(c_chr_array_package,
+                               len(c_chr_array_package),
+                               c_float_array_parsed,
+                               len(c_float_array_parsed))
+        print()
+        self.print_array(c_float_array_parsed)
+        print()
+
+        parsed_str_parameters = []
+        for i in range(len(self._parameters_1)):
+            parsed_str_parameters.append(f'{c_float_array_parsed[i]:.3f}')
+            self._model.add_parameter_record(self._db_session,
+                                             parsed_str_parameters[i],
+                                             self._parameters_1[i],
+                                             record)
+
+        # Refresh tv_parameters
+        GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
+        # Plot data
+        GLib.idle_add(self.refresh_plots, c_float_array_parsed)
+
+    def package_2(self, record, package_woh):
+        c_chr_array_package = (ctypes.c_char
+                               * len(package_woh))(*package_woh)
+        c_float_array_parsed = (ctypes.c_float * len(self._parameters_2))()
+        self.c_parse_package_2(c_chr_array_package,
+                               len(c_chr_array_package),
+                               c_float_array_parsed,
+                               len(c_float_array_parsed))
+        print()
+        self.print_array(c_float_array_parsed)
+        print()
+
+        parsed_str_parameters = []
+        for i in range(len(self._parameters_2)):
+            parsed_str_parameters.append(f'{c_float_array_parsed[i]:.3f}')
+            self._model.add_parameter_record(self._db_session,
+                                             parsed_str_parameters[i],
+                                             self._parameters_2[i],
+                                             record)
+
+        # Plot data
+        GLib.idle_add(self.refresh_tv_parameters_2, parsed_str_parameters)
+        GLib.idle_add(self.refresh_grid_2nd_package, parsed_str_parameters)
+        GLib.idle_add(self.refresh_plots_2, c_float_array_parsed)
+
+        # Just for testing
+        # Draw gps point
+        GLib.idle_add(self.add_gps_point, self.lat, self.lon)
+        self.lat += 0.00002
+        self.lon += 0.00002
+
+    def refresh_grid_2nd_package(self, parsed_str_parameters):
+        lbl_valt1 = self._mapbox.lbl_valt1
+        lbl_valt2 = self._mapbox.lbl_valt2
+        # lbl_valt3 = self._mapbox.lbl_valt3
+        lbl_vtimer = self._mapbox.lbl_vtimer
+
+        lbl_valt1.set_text(parsed_str_parameters[11])
+        lbl_valt2.set_text(parsed_str_parameters[12])
+        # lbl_valt3.set_text(parsed_str_parameters[13])
+        lbl_vtimer.set_text(parsed_str_parameters[13])
 
     # /////////////// Plotting ///////////////
     def load_canvases(self):
@@ -423,7 +530,11 @@ class Controller(object):
                        colors['cobalt'],
                        colors['cobaltgreen'],
                        colors['coldgrey'],
-                       colors['cobalt']
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen']
                        ]
 
         for parameter in self._parameters:
@@ -436,8 +547,23 @@ class Controller(object):
             c += 1
 
     def refresh_plots(self, c_float_array_parsed):
-        for i in range(len(self._plotcanvas_list)):
+        for i in range(len(self._plotcanvas_list)-3):
             self._plotcanvas_list[i].update_draw(c_float_array_parsed[i])
+
+    def refresh_plots_2(self, c_float_array_parsed):
+        for i in range(len(self._plotcanvas_list)-10):
+            self._plotcanvas_list[i].update_draw(c_float_array_parsed[i])
+
+        # SC
+        self._plotcanvas_list[13].update_draw(c_float_array_parsed[10])
+        # ALT1
+        self._plotcanvas_list[16].update_draw(c_float_array_parsed[11])
+        # ALT2
+        self._plotcanvas_list[17].update_draw(c_float_array_parsed[12])
+        # ALT3
+        # self._plotcanvas_list[18].update_draw(c_float_array_parsed[13])
+        # TIMER
+        self._plotcanvas_list[18].update_draw(c_float_array_parsed[13])
 
     # /////////////// Map track ///////////////
     def setup_map(self):

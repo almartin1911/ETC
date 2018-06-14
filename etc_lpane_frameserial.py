@@ -49,6 +49,8 @@ class Lpane_frameserial(Gtk.Frame):
         # self._grid.attach(self._btn_config, 2, 1, 1, 1)
 
         self._progress_bar = Gtk.ProgressBar(show_text=True)
+        s = "T1: 0, T2: 0\nTOTAL: 0 \u2714"
+        self._progress_bar.set_text(s)
         self._grid.attach(self._progress_bar, 0, 2, 3, 1)
 
     def _on_cbox_ports_changed(self, cbox):
