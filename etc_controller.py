@@ -222,7 +222,8 @@ class Controller(object):
 
     def _update_progress_bar(self):
         self._frame_serial._progress_bar.pulse()
-        s = f"T1: {self.pck1_ok}, T2: {self.pck2_ok}\nTOTAL: {self.package_counter} \u2714"
+        s = f"T1: {self.pck1_ok}, T2: {self.pck2_ok}"
+        s += f"\nTOTAL: {self.package_counter} \u2714"
         self._frame_serial._progress_bar.set_text(s)
         # self._frame_serial._progress_bar.set_text(str(ok) + u'\u2714' + ' '
         #                                           + str(bad) + u'\u2716')
