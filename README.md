@@ -1,14 +1,14 @@
 # Estación Terrena Chitisat (ETC)
 
-"Estación Terrena Chitisat" is a CanSat ground station software developed for my undergraduate university final project. It's a work under construction yet.
+"Estación Terrena Chitisat" is a CanSat ground station software developed for my undergraduate university final project. It's a work under construction yet. It's developed on Python 3 and the GTK3 PyGObject graphical toolkit.
 
 ### Prerequisites
 
-First, a functional Python development environment based on Git + pyenv + pipenv + GTK3 (PyGObject). For more information check https://pygobject.readthedocs.io/en/latest/getting_started.html.
+A functional Python development environment based on Git + pyenv + pipenv + GTK3 (PyGObject). For more information check https://pygobject.readthedocs.io/en/latest/getting_started.html.
 
 ### Installing
 
-### For developers
+#### For developers
 ```
 $ git clone https://github.com/amartin1911/ETC
 $ cd ETC
@@ -16,7 +16,7 @@ $ pipenv install
 $ pipenv shell
 $ python main.py
 ```
-### For end users
+#### For end users
 
 Coming soon...
 
