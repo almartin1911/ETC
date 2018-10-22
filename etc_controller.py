@@ -93,7 +93,7 @@ class Controller(object):
         # C LIBRARY INTERACTION
         # TODO: Relative path
         self._lib = ctypes.CDLL(
-            '/home/amartin1911/dev/ETC/c_library.so')
+            './c_library.so')
 
         # Draw empty canvases
         self._plotcanvas_list = []
