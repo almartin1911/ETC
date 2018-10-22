@@ -11,6 +11,7 @@ pyserial = "*"
 sqlalchemy = "*"
 matplotlib = "*"
 bitstring = "*"
+sphinx = "*"
 
 [dev-packages]
 
