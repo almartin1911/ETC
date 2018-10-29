@@ -104,9 +104,9 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
         float acce= 0.000061035;
 
         float barometro = 0.008;
-        float valor = 0.0244;
+        float valor = 0.080566;
         float sensibilidad= 0.185;
-        float relacion = 0.000244;
+        float relacion =  0.080566;
         float rev=0.000244;
         float pasos = 186.81818182;
 
@@ -114,7 +114,7 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
 float magx;
 
         nukaworld=conver1(cadena[0],cadena[1],nukaworld);
-        magx=nukaworld;//*magne;
+        magx=nukaworld*magne;
         // printf("magnetometro: %f\n ", magx);
 
 //--------------------------------------------------------
@@ -123,7 +123,7 @@ float magx;
 
        float magy;
        nukaworld=conver1(cadena[2],cadena[3],nukaworld);
-       magy=nukaworld;//*magne;
+       magy=nukaworld*magne;
        // printf("magnetometro: %f\n ", magy);
 
 
@@ -132,7 +132,7 @@ float magx;
 
         float magz;
         nukaworld=conver1(cadena[4],cadena[5],nukaworld);
-        magz=nukaworld;//*magne;
+        magz=nukaworld*magne;
         // printf("magnetometro: %f\n ", magz);
 
 
@@ -141,7 +141,7 @@ float magx;
 
                   float acelx;
                   nukaworld=conver1(cadena[6],cadena[7],nukaworld);
-                  acelx=nukaworld;//*dps;
+                  acelx=nukaworld*dps;
                   // printf("acelerometro: %f\n ", acelx);
 
  //--------------------------------------------------------
@@ -150,7 +150,7 @@ float magx;
 
                  float acely;
                  nukaworld=conver1(cadena[8],cadena[9],nukaworld);
-                 acely=nukaworld;//*dps;
+                 acely=nukaworld*dps;
                   //printf("acelerometro: %f\n ", acely);
 
 
@@ -159,21 +159,21 @@ float magx;
 
                   float acelz;
                   nukaworld=conver1(cadena[10],cadena[11],nukaworld);
-                  acelz=nukaworld;//*dps;
+                  acelz=nukaworld*dps;
                 //   printf("acelerometro: %f\n ", acelz);
 
   //-------------------------giroscopio en x-------------------
                    float girox;
 
                     nukaworld=conver1(cadena[12],cadena[13],nukaworld);
-                    girox=nukaworld;//*dps;
+                    girox=nukaworld*dps;
                    //  printf("giroscopio: %f\n ", girox);
   //--------------------------------------------------------
    //--------------------------------giroscopio en y-----------------------
 
                    float giroy;
                    nukaworld=conver1(cadena[14],cadena[15],nukaworld);
-                   giroy=nukaworld;//*dps;
+                   giroy=nukaworld*dps;
                  //   printf("giroscopio: %f\n ", giroy);
 
 
@@ -182,7 +182,7 @@ float magx;
 
                float giroz;
                nukaworld=conver1(cadena[16],cadena[17],nukaworld);
-                giroz=nukaworld;//*magne;
+                giroz=nukaworld*magne;
                // printf("giroscopio: %f\n ", giroz);
 
 //--------------------------------------------------------------------------
@@ -239,7 +239,7 @@ float magx;
        wasteland1=(int)cadena[21];
 
        wasteland2=wasteland0 | wasteland1;
-       tempe1 = wasteland2*valor;
+       tempe1 = wasteland2/0.01;
 
 
 
