@@ -1,6 +1,10 @@
 # Find and setup Arduino port
 
-Arduino's (and other USB-serial devices) end up as recognized ```/dev/ttyACM*``` or ```/dev/ttyUSB*``` in your **Linux-based** host OS. Next are steps for a **first-time only setup**. However, some of these commands might be useful if you're experiencing issues with the Arduino board connection.
+Arduino boards and other USB-serial devices end up recognized as `/dev/ttyACM*`  or `/dev/ttyUSB*` in your **Linux-based** host OS, for example, `/dev/ttyACM0`.
+
+Communication between Arduino and PC doesn't work out of the box in Linux (as far as I'm concerned), so, a workaround is mandatory.
+
+Next are steps for a **first-time only setup**. However, some of these commands might be useful if you  experiencing issues with the Arduino board connection.
 
 ## On Linux
 1. Open a terminal and type:
@@ -26,8 +30,10 @@ $ sudo usermod -a -G dialout $YOUR_USERNAME
 
 ## On Windows
 
-No special setup is required. Finding the port should be really straightforward.
+No special setup is required. Finding the port is really straightforward.
 
 1. Open **Device Manager**, and expand the ```Ports (COM & LPT)``` list.
+
 ![Serial port identification on Windows](https://www.mathworks.com/help/supportpkg/arduinoio/ug/win_dev_mngr_port.png)
+
 2. Finally, note the port number ( ```COM*```) of the Arduino board.
