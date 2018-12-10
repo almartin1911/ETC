@@ -47,7 +47,7 @@ class Controller(object):
         self.head1 = int.from_bytes(self.headers[0], byteorder=sys.byteorder)
         self.head2 = int.from_bytes(self.headers[1], byteorder=sys.byteorder)
         # self.header = b'\xd1'
-        self.package_size = 31
+        self.package_size = 45
         # self.package = numpy.empty(dtype=numpy.uint8,
         #                            shape=self.package_size)
         self.package = bytearray(self.package_size)
@@ -67,13 +67,17 @@ class Controller(object):
         self._parameters = self._get_parameters()
 
         # TODO: Remove this patch after DB refactor
-        self._parameters_1 = self._parameters[:16]
-        # print(len(self._parameters_1))
-        # print(self._parameters_1)
+        self._parameters_1 = self._parameters[:16] + self._parameters[19:]
+        print(len(self._parameters_1))
+        for item in self._parameters_1:
+            print(item)
+
         self._parameters_2 = self._parameters[:10] + [self._parameters[13]] + self._parameters[16:]
-        # print(len(self._parameters_2))
-        # print(self._parameters_2)
+        print(len(self._parameters_2))
+        for item in self._parameters_2:
+            print(item)
         # print(self._parameters, len(self._parameters))
+
         # TODO: Real management of commands and users
         self._command = self._db_session.query(self._model.Command).first()
         self._user_exec = self._db_session.query(self._model.User).first()
@@ -239,10 +243,10 @@ class Controller(object):
         parameters_store = Gtk.ListStore(str, str, str)
 
         # Populating parameters_store
-        default_value = "0.00"
-        for parameter in self._parameters_1:
-            symbol = parameter.symbol
-            unit = parameter.unit
+        default_value = "0.000"
+        for i in range(len(self._parameters_1)-9):
+            symbol = self._parameters_1[i].symbol
+            unit = self._parameters_1[i].unit
             parameters_store.append([symbol, default_value, unit])
 
         return parameters_store
@@ -386,62 +390,6 @@ class Controller(object):
             self.package_2(record, package_woh)
             self.pck2_ok += 1
 
-    def c_parse_package_1(self, input, size_in, output, size_out):
-        self._lib.parse_package_1.restype = ctypes.c_void_p
-        self._lib.parse_package_1(input, size_in, output, size_out)
-
-    def c_parse_package_2(self, input, size_in, output, size_out):
-        self._lib.parse_package_2.restype = ctypes.c_void_p
-        self._lib.parse_package_2(input, size_in, output, size_out)
-
-    def print_array(self, array):
-        print(len(array), end=' | ')
-        for value in array:
-            print(format(value, '.2f'), end=', ')
-        print()
-
-    def refresh_tv_parameters(self, parsed_str_parameters):
-        tv_parameters = self._frame_parameters._tv_parameters
-        store_parameters = tv_parameters.get_model()
-
-        rootiter = store_parameters.get_iter_first()
-        store_parameters[rootiter][1] = parsed_str_parameters[0]
-
-        treeiter = store_parameters.iter_next(rootiter)
-        store_parameters[treeiter][1] = parsed_str_parameters[1]
-
-        for i in range(2, len(self._parameters_1)):
-                treeiter = store_parameters.iter_next(treeiter)
-                store_parameters[treeiter][1] = parsed_str_parameters[i]
-
-        tv_parameters.set_model(store_parameters)
-
-        return False
-
-    def refresh_tv_parameters_2(self, parsed_str_parameters):
-        tv_parameters = self._frame_parameters._tv_parameters
-        store_parameters = tv_parameters.get_model()
-
-        rootiter = store_parameters.get_iter_first()
-        store_parameters[rootiter][1] = parsed_str_parameters[0]
-
-        treeiter = store_parameters.iter_next(rootiter)
-        store_parameters[treeiter][1] = parsed_str_parameters[1]
-
-        for i in range(2, len(self._parameters_2)-4):
-                treeiter = store_parameters.iter_next(treeiter)
-                store_parameters[treeiter][1] = parsed_str_parameters[i]
-
-        treeiter = store_parameters.iter_next(treeiter)
-        treeiter = store_parameters.iter_next(treeiter)
-        treeiter = store_parameters.iter_next(treeiter)
-        treeiter = store_parameters.iter_next(treeiter)
-        store_parameters[treeiter][1] = parsed_str_parameters[10]
-
-        tv_parameters.set_model(store_parameters)
-
-        return False
-
     def package_1(self, record, package_woh):
         # print(len(package_woh))
         c_chr_array_package = (ctypes.c_char
@@ -469,6 +417,11 @@ class Controller(object):
         GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
         # Plot data
         GLib.idle_add(self.refresh_plots, c_float_array_parsed)
+        # Draw GPS point
+        GLib.idle_add(self.add_gps_point, c_float_array_parsed[23],
+                      c_float_array_parsed[24])
+        # Refresh mapbox grid
+        GLib.idle_add(self.refresh_mapbox_grid, parsed_str_parameters)
 
     def package_2(self, record, package_woh):
         c_chr_array_package = (ctypes.c_char
@@ -501,16 +454,97 @@ class Controller(object):
         self.lat += 0.00002
         self.lon += 0.00002
 
-    def refresh_grid_2nd_package(self, parsed_str_parameters):
-        lbl_valt1 = self._mapbox.lbl_valt1
-        lbl_valt2 = self._mapbox.lbl_valt2
-        # lbl_valt3 = self._mapbox.lbl_valt3
-        lbl_vtimer = self._mapbox.lbl_vtimer
+    def refresh_tv_parameters(self, parsed_str_parameters):
+        tv_parameters = self._frame_parameters._tv_parameters
+        store_parameters = tv_parameters.get_model()
 
-        lbl_valt1.set_text(parsed_str_parameters[11])
-        lbl_valt2.set_text(parsed_str_parameters[12])
-        # lbl_valt3.set_text(parsed_str_parameters[13])
-        lbl_vtimer.set_text(parsed_str_parameters[13])
+        rootiter = store_parameters.get_iter_first()
+        store_parameters[rootiter][1] = parsed_str_parameters[0]
+
+        treeiter = store_parameters.iter_next(rootiter)
+        store_parameters[treeiter][1] = parsed_str_parameters[1]
+
+        for i in range(2, len(self._parameters_1)-9):
+                treeiter = store_parameters.iter_next(treeiter)
+                store_parameters[treeiter][1] = parsed_str_parameters[i]
+
+        tv_parameters.set_model(store_parameters)
+
+        return False
+
+    def refresh_tv_parameters_2(self, parsed_str_parameters):
+        tv_parameters = self._frame_parameters._tv_parameters
+        store_parameters = tv_parameters.get_model()
+
+        rootiter = store_parameters.get_iter_first()
+        store_parameters[rootiter][1] = parsed_str_parameters[0]
+
+        treeiter = store_parameters.iter_next(rootiter)
+        store_parameters[treeiter][1] = parsed_str_parameters[1]
+
+        for i in range(2, len(self._parameters_2)-4):
+                treeiter = store_parameters.iter_next(treeiter)
+                store_parameters[treeiter][1] = parsed_str_parameters[i]
+
+        treeiter = store_parameters.iter_next(treeiter)
+        treeiter = store_parameters.iter_next(treeiter)
+        treeiter = store_parameters.iter_next(treeiter)
+        treeiter = store_parameters.iter_next(treeiter)
+        store_parameters[treeiter][1] = parsed_str_parameters[10]
+
+        tv_parameters.set_model(store_parameters)
+
+        return False
+
+    def c_parse_package_1(self, input, size_in, output, size_out):
+        self._lib.parse_package_1.restype = ctypes.c_void_p
+        self._lib.parse_package_1(input, size_in, output, size_out)
+
+    def c_parse_package_2(self, input, size_in, output, size_out):
+        self._lib.parse_package_2.restype = ctypes.c_void_p
+        self._lib.parse_package_2(input, size_in, output, size_out)
+
+    def print_array(self, array):
+        print(len(array), end=' | ')
+        for value in array:
+            print(format(value, '.3f'), end=', ')
+        print()
+
+    def refresh_mapbox_grid(self, parsed_str_parameters):
+        lbl_vgpsdia = self._mapbox.lbl_vgpsdia
+        lbl_vgpsmes = self._mapbox.lbl_vgpsmes
+        lbl_vgpsanio = self._mapbox.lbl_vgpsanio
+        lbl_vgpsdia.set_text(parsed_str_parameters[19])
+        lbl_vgpsmes.set_text(parsed_str_parameters[20])
+        lbl_vgpsanio.set_text(parsed_str_parameters[21])
+
+        lbl_vgpshor = self._mapbox.lbl_vgpshor
+        lbl_vgpsmin = self._mapbox.lbl_vgpsmin
+        lbl_vgpsseg = self._mapbox.lbl_vgpsseg
+        lbl_vgpshor.set_text(parsed_str_parameters[16])
+        lbl_vgpsmin.set_text(parsed_str_parameters[17])
+        lbl_vgpsseg.set_text(parsed_str_parameters[18])
+
+        lbl_vgpsalt = self._mapbox.lbl_vgpsalt
+        lbl_vgpsalt.set_text(parsed_str_parameters[18])
+
+    def refresh_mapbox_grid_2(self, parsed_str_parameters):
+        lbl_vgpsdia = self._mapbox.lbl_vgpsdia
+        lbl_vgpsmes = self._mapbox.lbl_vgpsmes
+        lbl_vgpsanio = self._mapbox.lbl_vgpsanio
+        lbl_vgpsdia.set_text(parsed_str_parameters[19])
+        lbl_vgpsmes.set_text(parsed_str_parameters[20])
+        lbl_vgpsanio.set_text(parsed_str_parameters[21])
+
+        lbl_vgpshor = self._mapbox.lbl_vgpshor
+        lbl_vgpsmin = self._mapbox.lbl_vgpsmin
+        lbl_vgpsseg = self._mapbox.lbl_vgpsseg
+        lbl_vgpshor.set_text(parsed_str_parameters[16])
+        lbl_vgpsmin.set_text(parsed_str_parameters[17])
+        lbl_vgpsseg.set_text(parsed_str_parameters[18])
+
+        lbl_vgpsalt = self._mapbox.lbl_vgpsalt
+        lbl_vgpsalt.set_text(parsed_str_parameters[18])
 
     # /////////////// Plotting ///////////////
     def load_canvases(self):
@@ -535,21 +569,46 @@ class Controller(object):
                        colors['cobaltgreen'],
                        colors['coldgrey'],
                        colors['cobalt'],
-                       colors['cobaltgreen']
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey'],
+                       colors['cobalt'],
+                       colors['cobaltgreen'],
+                       colors['coldgrey']
                        ]
 
-        for parameter in self._parameters:
-            plotcanvas = etc_plotcanvas.PlotCanvas(parameter.name,
-                                                   parameter.symbol,
-                                                   parameter.unit,
+        # print(len(colors_list))
+
+        for i in range(len(self._parameters)-10):
+            plotcanvas = etc_plotcanvas.PlotCanvas(self._parameters[i].name,
+                                                   self._parameters[i].symbol,
+                                                   self._parameters[i].unit,
                                                    colors_list[c].hex_format())
             self._plotcanvas_list.append(plotcanvas)
             flowbox.add(plotcanvas.canvas)
             c += 1
 
+        plotcanvas = etc_plotcanvas.PlotCanvas(self._parameters[25].name,
+                                               self._parameters[25].symbol,
+                                               self._parameters[25].unit,
+                                               colors_list[c].hex_format())
+        self._plotcanvas_list.append(plotcanvas)
+        flowbox.add(plotcanvas.canvas)
+
+        print(len(self._plotcanvas_list))
+        c = 0
+        for item in self._plotcanvas_list:
+            print(c, item.ax.get_title())
+            c += 1
+
     def refresh_plots(self, c_float_array_parsed):
         for i in range(len(self._plotcanvas_list)-3):
             self._plotcanvas_list[i].update_draw(c_float_array_parsed[i])
+
+        # GPSALT
+            self._plotcanvas_list[18].update_draw(c_float_array_parsed[22])
 
     def refresh_plots_2(self, c_float_array_parsed):
         for i in range(len(self._plotcanvas_list)-10):
