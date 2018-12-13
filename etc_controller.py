@@ -65,29 +65,29 @@ class Controller(object):
         # False parameter: no debug
         self._db_session = self._model.connect_to_database(False)
         self._parameters = self._get_parameters()
-        i = 0
-        print("Parameters", len(self._parameters))
-        for item in self._parameters:
-            print(i, item)
-            i += 1
+        # i = 0
+        # print("Parameters", len(self._parameters))
+        # for item in self._parameters:
+        #     print(i, item)
+        #     i += 1
 
         # TODO: Remove this patch after DB refactor
         self._parameters_1 = self._parameters[:16] + self._parameters[19:28]
-        i = 0
-        print("Parameters package_1", len(self._parameters_1))
-        for item in self._parameters_1:
-            print(i, item)
-            i += 1
+        # i = 0
+        # print("Parameters package_1", len(self._parameters_1))
+        # for item in self._parameters_1:
+        #     print(i, item)
+        #     i += 1
 
         # TODO: Remove this patch after DB refactor
         self._parameters_2 = self._parameters[:10] + [self._parameters[13]] + \
             self._parameters[16:19] + [self._parameters[28]] + \
             self._parameters[19:28]
-        i = 0
-        print("Parameters package_2", len(self._parameters_2))
-        for item in self._parameters_2:
-            print(i, item)
-            i += 1
+        # i = 0
+        # print("Parameters package_2", len(self._parameters_2))
+        # for item in self._parameters_2:
+        #     print(i, item)
+        #     i += 1
 
         # TODO: Real management of commands and users
         self._command = self._db_session.query(self._model.Command).first()
@@ -622,11 +622,11 @@ class Controller(object):
         self._plotcanvas_list.append(plotcanvas)
         flowbox.add(plotcanvas.canvas)
 
-        print(len(self._plotcanvas_list))
-        c = 0
-        for item in self._plotcanvas_list:
-            print(c, item.ax.get_title())
-            c += 1
+        # print(len(self._plotcanvas_list))
+        # c = 0
+        # for item in self._plotcanvas_list:
+        #     print(c, item.ax.get_title())
+        #     c += 1
 
     def refresh_plots(self, c_float_array_parsed):
         for i in range(len(self._plotcanvas_list)-3):

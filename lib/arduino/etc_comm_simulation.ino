@@ -5,7 +5,7 @@ const unsigned int interval = 6000;
 const uint8_t command = 0xc2;
 const uint8_t header = 0xd1;
 const uint8_t header2 = 0xd2;
-const uint8_t buffer_size = 31;
+const uint8_t buffer_size = 45;
 uint8_t buffer[buffer_size];
 int pckcounter;
 uint8_t received_byte;
@@ -53,11 +53,17 @@ void send_buffer() {
         build_buffer(header2);
     }
     Serial.write(buffer, buffer_size);
+//    for(int i=0; i<buffer_size; i++){
+//      Serial.print(buffer[i]);
+//      Serial.print(", ");
+//    }
+//    Serial.println("");
+
 }
 
 void send_response(){
     if(input_available == true){
-        if(received_byte == command){            
+        if(received_byte == command){
             elapsedMillis time_elapsed;
 
             while(time_elapsed < interval){
@@ -68,6 +74,15 @@ void send_response(){
         }
     }
 }
+
+void send_response2(){
+  elapsedMillis time_elapsed;
+  while(time_elapsed < interval){
+    send_buffer();
+    delay(500);
+  }
+}
+
 
 void recv_one_byte() {
     if(Serial.available() > 0) {
@@ -86,7 +101,8 @@ void setup() {
     pckcounter = 0;
 }
 
-void loop() {    
+void loop() {
     recv_one_byte();
-    send_response();    
+    send_response();
+    //send_response2();
 }
