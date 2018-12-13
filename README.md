@@ -6,17 +6,21 @@
 
 ETC is part of the *Chitisat* project, a Bolivian didactic satellite similar to a CubeSat, but entirely framed in a typical CanSat mission. *Chitisat* is under construction at *Instituto de Electronica Aplicada* ([IEA](http://iea.umsa.bo/)), and haven't been launched to Earth's lower atmosphere yet. If you're interested in learning more about *Chitisat*, you can [take a look here](https://gitlab.com/amartin1911/teXisUMSA/blob/master/FCPN/informatica/pdf/tesis_online.pdf) (Go to Chapter 4. Spanish only).
 
-ETC has been conceived to work only for the *Chitisat* CanSat. However, you can have a taste of its capabilities and play with the code by the means of an Arduino loaded with a simulation program that can send dull data to ETC software. This simple architecture will look like this:
-
-**!!! INSERT SIMPLE ARCHITECTURE IMAGE HERE**
+ETC has been conceived to work only for the *Chitisat* CanSat. However, you can have a taste of its capabilities and play with the code by the means of an Arduino loaded with a simulation program that can send dull data to ETC software.
 
 Please take into account for the time being **there is no such thing as a packaged or executable version of ETC**, so, you will have to setup the proper development environment including all the required dependencies.
 
 ### Prerequisites
 
-##### A Python 3 development environment
+##### Setup a proper Python 3 development environment
 
 A functional Python development environment based on Git + pyenv + pipenv + GTK3 (PyGObject) is mandatory. Detailed instructions on how to setup this environment can be found [here](https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html).
+
+##### Install OsmGpsMap system libraries
+```bash
+$ sudo apt update
+$ sudo apt install libosmgpsmap-1.0-1
+```
 
 ##### Find and setup the Arduino port
 
