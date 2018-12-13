@@ -65,18 +65,29 @@ class Controller(object):
         # False parameter: no debug
         self._db_session = self._model.connect_to_database(False)
         self._parameters = self._get_parameters()
+        i = 0
+        print("Parameters", len(self._parameters))
+        for item in self._parameters:
+            print(i, item)
+            i += 1
 
         # TODO: Remove this patch after DB refactor
-        self._parameters_1 = self._parameters[:16] + self._parameters[19:]
-        print(len(self._parameters_1))
+        self._parameters_1 = self._parameters[:16] + self._parameters[19:28]
+        i = 0
+        print("Parameters package_1", len(self._parameters_1))
         for item in self._parameters_1:
-            print(item)
+            print(i, item)
+            i += 1
 
-        self._parameters_2 = self._parameters[:10] + [self._parameters[13]] + self._parameters[16:]
-        print(len(self._parameters_2))
+        # TODO: Remove this patch after DB refactor
+        self._parameters_2 = self._parameters[:10] + [self._parameters[13]] + \
+            self._parameters[16:19] + [self._parameters[28]] + \
+            self._parameters[19:28]
+        i = 0
+        print("Parameters package_2", len(self._parameters_2))
         for item in self._parameters_2:
-            print(item)
-        # print(self._parameters, len(self._parameters))
+            print(i, item)
+            i += 1
 
         # TODO: Real management of commands and users
         self._command = self._db_session.query(self._model.Command).first()
@@ -417,11 +428,11 @@ class Controller(object):
         GLib.idle_add(self.refresh_tv_parameters, parsed_str_parameters)
         # Plot data
         GLib.idle_add(self.refresh_plots, c_float_array_parsed)
+        # Refresh mapbox grid
+        GLib.idle_add(self.refresh_mapbox_grid, parsed_str_parameters)
         # Draw GPS point
         GLib.idle_add(self.add_gps_point, c_float_array_parsed[23],
                       c_float_array_parsed[24])
-        # Refresh mapbox grid
-        GLib.idle_add(self.refresh_mapbox_grid, parsed_str_parameters)
 
     def package_2(self, record, package_woh):
         c_chr_array_package = (ctypes.c_char
@@ -443,16 +454,22 @@ class Controller(object):
                                              self._parameters_2[i],
                                              record)
 
-        # Plot data
+        # Refresh tv_parameters
         GLib.idle_add(self.refresh_tv_parameters_2, parsed_str_parameters)
-        GLib.idle_add(self.refresh_grid_2nd_package, parsed_str_parameters)
+        # GLib.idle_add(self.refresh_grid_2nd_package, parsed_str_parameters)
+        # Plot data
         GLib.idle_add(self.refresh_plots_2, c_float_array_parsed)
-
-        # Just for testing
-        # Draw gps point
-        GLib.idle_add(self.add_gps_point, self.lat, self.lon)
-        self.lat += 0.00002
-        self.lon += 0.00002
+        # Refresh mapbox grid
+        GLib.idle_add(self.refresh_mapbox_grid_2, parsed_str_parameters)
+        # Draw GPS point
+        GLib.idle_add(self.add_gps_point, c_float_array_parsed[22],
+                      c_float_array_parsed[23])
+        #
+        # # Just for testing
+        # # Draw gps point
+        # GLib.idle_add(self.add_gps_point, self.lat, self.lon)
+        # self.lat += 0.00002
+        # self.lon += 0.00002
 
     def refresh_tv_parameters(self, parsed_str_parameters):
         tv_parameters = self._frame_parameters._tv_parameters
@@ -482,10 +499,11 @@ class Controller(object):
         treeiter = store_parameters.iter_next(rootiter)
         store_parameters[treeiter][1] = parsed_str_parameters[1]
 
-        for i in range(2, len(self._parameters_2)-4):
+        # Iterate up to BAR
+        for i in range(2, len(self._parameters_2)-14):
                 treeiter = store_parameters.iter_next(treeiter)
                 store_parameters[treeiter][1] = parsed_str_parameters[i]
-
+        # Skip TEMP1, TEMP2, TEMP3
         treeiter = store_parameters.iter_next(treeiter)
         treeiter = store_parameters.iter_next(treeiter)
         treeiter = store_parameters.iter_next(treeiter)
@@ -526,25 +544,32 @@ class Controller(object):
         lbl_vgpsseg.set_text(parsed_str_parameters[18])
 
         lbl_vgpsalt = self._mapbox.lbl_vgpsalt
-        lbl_vgpsalt.set_text(parsed_str_parameters[18])
+        lbl_vgpsalt.set_text(parsed_str_parameters[22])
 
     def refresh_mapbox_grid_2(self, parsed_str_parameters):
+        lbl_vtimer = self._mapbox.lbl_vtimer
+        lbl_vtimer.set_text(parsed_str_parameters[13])
+
         lbl_vgpsdia = self._mapbox.lbl_vgpsdia
         lbl_vgpsmes = self._mapbox.lbl_vgpsmes
         lbl_vgpsanio = self._mapbox.lbl_vgpsanio
-        lbl_vgpsdia.set_text(parsed_str_parameters[19])
-        lbl_vgpsmes.set_text(parsed_str_parameters[20])
-        lbl_vgpsanio.set_text(parsed_str_parameters[21])
+        lbl_vgpsdia.set_text(parsed_str_parameters[18])
+        lbl_vgpsmes.set_text(parsed_str_parameters[19])
+        lbl_vgpsanio.set_text(parsed_str_parameters[20])
 
         lbl_vgpshor = self._mapbox.lbl_vgpshor
         lbl_vgpsmin = self._mapbox.lbl_vgpsmin
         lbl_vgpsseg = self._mapbox.lbl_vgpsseg
-        lbl_vgpshor.set_text(parsed_str_parameters[16])
-        lbl_vgpsmin.set_text(parsed_str_parameters[17])
-        lbl_vgpsseg.set_text(parsed_str_parameters[18])
+        lbl_vgpshor.set_text(parsed_str_parameters[15])
+        lbl_vgpsmin.set_text(parsed_str_parameters[16])
+        lbl_vgpsseg.set_text(parsed_str_parameters[17])
 
+        lbl_valt1 = self._mapbox.lbl_valt1
+        lbl_valt1.set_text(parsed_str_parameters[11])
+        lbl_valt2 = self._mapbox.lbl_valt2
+        lbl_valt2.set_text(parsed_str_parameters[12])
         lbl_vgpsalt = self._mapbox.lbl_vgpsalt
-        lbl_vgpsalt.set_text(parsed_str_parameters[18])
+        lbl_vgpsalt.set_text(parsed_str_parameters[21])
 
     # /////////////// Plotting ///////////////
     def load_canvases(self):
@@ -581,7 +606,7 @@ class Controller(object):
 
         # print(len(colors_list))
 
-        for i in range(len(self._parameters)-10):
+        for i in range(len(self._parameters)-11):
             plotcanvas = etc_plotcanvas.PlotCanvas(self._parameters[i].name,
                                                    self._parameters[i].symbol,
                                                    self._parameters[i].unit,
@@ -611,7 +636,7 @@ class Controller(object):
             self._plotcanvas_list[18].update_draw(c_float_array_parsed[22])
 
     def refresh_plots_2(self, c_float_array_parsed):
-        for i in range(len(self._plotcanvas_list)-10):
+        for i in range(len(self._plotcanvas_list)-9):
             self._plotcanvas_list[i].update_draw(c_float_array_parsed[i])
 
         # SC
@@ -620,10 +645,8 @@ class Controller(object):
         self._plotcanvas_list[16].update_draw(c_float_array_parsed[11])
         # ALT2
         self._plotcanvas_list[17].update_draw(c_float_array_parsed[12])
-        # ALT3
-        # self._plotcanvas_list[18].update_draw(c_float_array_parsed[13])
-        # TIMER
-        self._plotcanvas_list[18].update_draw(c_float_array_parsed[13])
+        # GPSALT
+        self._plotcanvas_list[18].update_draw(c_float_array_parsed[21])
 
     # /////////////// Map track ///////////////
     def setup_map(self):

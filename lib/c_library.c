@@ -415,7 +415,7 @@ void parse_package_2(unsigned char *cadena, int tam_in, float *datos, int tam_ou
         float ACELY;
         nukaworld=conver1(cadena[8],cadena[9],nukaworld);
         ACELY=nukaworld*a;
-        printf("\n acelerometroY: %f\n ", ACELY);
+        // printf("\n acelerometroY: %f\n ", ACELY);
        //--------------------------------acelerometro en z-----------------------
         float ACELZ;
         nukaworld=conver1(cadena[10],cadena[11],nukaworld);
@@ -470,7 +470,7 @@ void parse_package_2(unsigned char *cadena, int tam_in, float *datos, int tam_ou
         farharbor3= farharbor2 | vault_tec2;
 
         BAR=farharbor3/100;//*barometro;
-        printf("\n barometro %f\n",BAR);
+        // printf("\n barometro %f\n",BAR);
 
     /*******************************************
     //-------------------CORRIENTE ACS712----------
@@ -485,7 +485,7 @@ void parse_package_2(unsigned char *cadena, int tam_in, float *datos, int tam_ou
         point_lookout3 = point_lookout2 & 0xfff0;
         point_lookout3>>=4;
         SC= ((point_lookout3*relacion)-2.5)/sensibilidad;
-        printf("\n CORRIENTE: %f\n",SC);
+        // printf("\n CORRIENTE: %f\n",SC);
 
     /**------------ALTURA 1----------------------*/
         float ALT1;
@@ -518,50 +518,50 @@ void parse_package_2(unsigned char *cadena, int tam_in, float *datos, int tam_ou
     float GPSHOR;
     var = converhour(cadena[30], var);
     GPSHOR = var;
-    printf("\n hora: %f",GPSHOR);
+    // printf("\n hora: %f",GPSHOR);
     var = 0;
     float GPSMIN;
     var = convermin(cadena[30],cadena[31], var);
     GPSMIN = var;
-    printf(":min: %f",GPSMIN);
+    // printf(":min: %f",GPSMIN);
     var = 0;
     float GPSSEG;
     var = converseg(cadena[31],cadena[32], var);
     GPSSEG = var;
-    printf("seg: %f",GPSMIN);
+    // printf("seg: %f",GPSMIN);
     var = 0;
     float GPSDIA;
     var = converdia(cadena[32], var);
     GPSDIA = var;
-    printf("\n dia: %f ",GPSDIA);
+    // printf("\n dia: %f ",GPSDIA);
     var = 0;
     float GPSMES;
     var = convermes(cadena[32],cadena[33], var);
     GPSMES = var;
-    printf(" mes: %f ",GPSMES);
+    // printf(" mes: %f ",GPSMES);
     var = 0;
     float GPSANO;
     var = converanio(cadena[33], var);
     GPSANO = var + 2000;
-    printf(" a�o: %f \n",GPSANO);
+    // printf(" a�o: %f \n",GPSANO);
     var = 0;
     float GPSALT;
     var = converaltura(cadena[34],cadena[35], var);
     GPSALT = var / 10;
-    printf("\n ALTURA: %f \n",GPSALT);
+    // printf("\n ALTURA: %f \n",GPSALT);
     var = 0;
 
     double GPSLAT;
 
     var = converlatlon(cadena[36],cadena[37],cadena[38],cadena[39], var);
     GPSLAT = var;
-    printf("\n LATITUD: %f \n",GPSLAT);
+    // printf("\n LATITUD: %f \n",GPSLAT);
     var = 0;
 
     float GPSLON;
     var = converlatlon(cadena[40],cadena[41],cadena[42],cadena[43], var);
     GPSLON = var;
-    printf("\n LONGITUD: %f \n",GPSLON);
+    // printf("\n LONGITUD: %f \n",GPSLON);
 
 
     //float datos[24];
