@@ -88,17 +88,17 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
         short mothership0 = 0, mothership1 = 0,mothership2 = 0,mothership3 = 0,mothership4 = 0;
         int automatron=0;
         float var;
-        const float magne = 2.56;      //configuracion de la ganancia del magnetometro
+        const float magne = 0.0729927;      //configuracion de la ganancia del magnetometro
         const float dps=0.076335877;   //grados por segiundo?
         const float acce= 0.000061035;  //
-        const float a = (9.8/2048.0);  //escalado a 16g
-        const float gy = (1000.0/32768.0);  //escalado a
+        const float a = (9.81/2048.0);  //escalado a 16g
+        const float gy = (250/32768.0);  //escalado a
         const float barometro = 0.008;  //conversion de hectopascales?
         const float valor = 0.080566;  // datos en binario * voltaje de referencia * escalamiento
         const float sensibilidad= 0.185;  //sensor de corriente
         const float relacion =  0.080566;  //datos en
-        const float rev=0.000244;   // voltaje de referencia del ADC = 1 v ; 1 binario = 0.000244 v
-        const float pasos = 186.81818182;
+        // const float rev=0.000244;   // voltaje de referencia del ADC = 1 v ; 1 binario = 0.000244 v
+        const float pasos = 186.81818182 * 2;
         const float div = 0.001;
     /********************************************************
     ==================MAGNETOMETRO HMC5883L=======================
@@ -160,28 +160,45 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
      ******************************************************/
         automatron= (int)(cadena[20]);    //conversion de tipo a short
         float BAR;
-        automatron & 0xf0;
-        automatron >>=4;
-            //---------------
-        new_vegas1=(short)(cadena[19]);
-        new_vegas2=new_vegas1 & 0x0F;
-        new_vegas2 <<=4;
+        // LAST
+        // int y1 = 0;
+        // int y2 = 0;
+        // int y3 = 0;
+        // int y4 = cadena[18];
+        //
+        // farharbor = (cadena[20] >> 4) & 0x0000000f;
+        // y1 = (y4 << 12) & 0x000ff000;
+        // y2 = (cadena[19] << 4) & 0x00000ffO;
+        // farharbor2 = y1 | y2 | farharbor1;
+        // BAR = farharbor2 * 0.01;
 
-        farharbor = new_vegas2 | automatron;
+        // borrar
+        // float BAR;
+        BAR = 0;
 
-        new_vegas3=new_vegas1& 0xf0;
-        new_vegas3 <<=4;
-        farharbor1= farharbor | new_vegas3;
-            //------------------
-        vault_tec=(short)cadena[18];    //trama[18]
-        vault_tec1 = vault_tec & 0x0F;
-        vault_tec1 <<= 12;
-        farharbor2= vault_tec1 | farharbor1;   //se obtiene el byte alto
-        vault_tec2=vault_tec & 0xf0;
-        vault_tec2<<=12;
-        farharbor3= farharbor2 | vault_tec2;
-
-        BAR=farharbor3/100;//*barometro;
+        //OLD
+        // automatron & 0xf0;
+        // automatron >>=4;
+        //     //---------------
+        // new_vegas1=(short)(cadena[19]);
+        // new_vegas2=new_vegas1 & 0x0F;
+        // new_vegas2 <<=4;
+        //
+        // farharbor = new_vegas2 | automatron;
+        //
+        // new_vegas3=new_vegas1& 0xf0;
+        // new_vegas3 <<=4;
+        // farharbor1= farharbor | new_vegas3;
+        //     //------------------
+        // vault_tec=(short)cadena[18];    //trama[18]
+        // vault_tec1 = vault_tec & 0x0F;
+        // vault_tec1 <<= 12;
+        // farharbor2= vault_tec1 | farharbor1;   //se obtiene el byte alto
+        // vault_tec2=vault_tec & 0xf0;
+        // vault_tec2<<=12;
+        // farharbor3= farharbor2 | vault_tec2;
+        //
+        // BAR=farharbor3/100;//*barometro;
         //printf("\n barometro %f\n",BAR);
     /*******************************************
     //------------------------temperatura 1-----------
@@ -207,7 +224,7 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
         brokensteel2 = brokensteel0 | brokensteel1;
         brokensteel3 = brokensteel2 & 0xfff0;
         brokensteel3>>=4;
-        TEM2= brokensteel3*valor;
+        TEM2= (brokensteel3 * valor) / 10;
         //printf("\n T2: %f\n",TEM2);
     /*******************************************
     //------------------------temperatura 3-----------
@@ -222,7 +239,7 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
 
         anchorage3 = anchorage2 & 0x0FFF;
 
-        TEM3= anchorage3*valor;
+        TEM3= (anchorage3*valor) / 10;
         //printf("\n T3: %f\n",TEM3);
     /*******************************************
     //-------------------CORRIENTE ACS712----------
@@ -243,11 +260,11 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
     ********************************************/
         float SV;
         mothership0 = (int)cadena[26];
-        mothership1=mothership0<<8;
-        mothership2= (int)cadena[27];
+        mothership1 =mothership0<<8;
+        mothership2 = (int)cadena[27];
         mothership3 = mothership1| mothership2;
         mothership4 = mothership3 & 0x0FFF;
-        SV =mothership4*rev;
+        SV = (mothership4/100) ;
 
         //printf("\n VOLTAJE: %f\n",SV);
     /*******************************************
@@ -257,7 +274,7 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
 
         float SUV;
         nukaworld=conver1(cadena[28],cadena[29],nukaworld);
-        SUV=(nukaworld*0.025)/pasos;
+        SUV=(nukaworld)/pasos;
         //printf("\n ultra: %f\n ", SUV);
 
     /************************************************
@@ -301,13 +318,13 @@ void parse_package_1(unsigned char *cadena, int tam_in, float *datos, int tam_ou
 
         double GPSLAT;
         var = converlatlon(cadena[36],cadena[37],cadena[38],cadena[39], var);
-        GPSLAT = var;
+        GPSLAT = var / 1000000;
         //printf("\n LATITUD: %f \n",GPSLAT);
         var = 0;
 
         float GPSLON;
         var = converlatlon(cadena[40],cadena[41],cadena[42],cadena[43], var);
-        GPSLON = var;
+        GPSLON = var / 1000000;
         //printf("\n LONGITUD: %f \n",GPSLON);
     /**************************************************************
           Almacenamiento y reenvio a programa principal de la ETC
@@ -369,17 +386,17 @@ void parse_package_2(unsigned char *cadena, int tam_in, float *datos, int tam_ou
 
         int automatron=0;
 
-        const float magne = 2.56;      //configuracion de la ganancia del magnetometro
+        const float magne = 0.0729927;      //configuracion de la ganancia del magnetometro
         const float dps=0.076335877;   //grados por segiundo?
         const float acce= 0.000061035;  //
-        const float a = (9.8/2048.0);  //escalado a 16g
-        const float gy = (1000.0/32768.0);  //escalado a
-        const float barometro = 0.008;  //conversion de hectopascales?
+        const float a = (9.81/2048.0);  //escalado a 16g
+        const float gy = (250/32768.0);  //escalado a
+        const float barometro = 0.008;  //conversirevon de hectopascales?
         const float valor = 0.080566;  // datos en binario * voltaje de referencia * escalamiento
         const float sensibilidad= 0.185;  //sensor de corriente
         const float relacion =  0.080566;  //datos en
-        const float rev=0.000244;   // voltaje de referencia del ADC = 1 v ; 1 binario = 0.000244 v
-        const float pasos = 186.81818182;
+        // const float rev=0.000244;   // voltaje de referencia del ADC = 1 v ; 1 binario = 0.000244 v
+        const float pasos = 186.81818182 * 2;
     /********************************************************
     ==================MAGNETOMETRO HMC5883L=======================
      ******************************************************/
@@ -443,33 +460,50 @@ void parse_package_2(unsigned char *cadena, int tam_in, float *datos, int tam_ou
     ==================BAROMETRO========================
 
      ******************************************************/
-        automatron= (int)(cadena[20]);    //conversion de tipo a short
+        // LAST
+        // automatron= (int)(cadena[20]);    //conversion de tipo a short
+        // float BAR;
+        // u_int32_t y1;
+        //  y2;
+        // u_int32_t y3;
+        // u_int32_t y4 = cadena[18];
+        //
+        // farharbor = (cadena[20] >> 4) & 0x0000000f;
+        // y1 = (y4 << 12) & 0x000ff000;
+        // y2 = (cadena[19] << 4) & 0x00000ffO;
+        // farharbor2 = y1 | y2 | farharbor1;
+        // BAR = farharbor2 * 0.01;
+
+        // borrar
         float BAR;
-        automatron & 0xf0;
-        automatron >>=4;
-            //---------------
-        new_vegas1=(short)(cadena[19]);
-        new_vegas2=new_vegas1 & 0x0F;
-        new_vegas2 <<=4;
+        BAR = 0;
 
-        farharbor = new_vegas2 | automatron;
-
-        new_vegas3=new_vegas1& 0xf0;
-        new_vegas3 <<=4;
-
-        farharbor1= farharbor | new_vegas3;
-            //------------------
-        vault_tec=(short)cadena[18];    //trama[18]
-        vault_tec1 = vault_tec & 0x0F;
-        vault_tec1 <<= 12;
-        farharbor2= vault_tec1 | farharbor1;   //se obtiene el byte alto
-
-        vault_tec2=vault_tec & 0xf0;
-        vault_tec2<<=12;
-
-        farharbor3= farharbor2 | vault_tec2;
-
-        BAR=farharbor3/100;//*barometro;
+        // OLD
+        // automatron & 0xf0;
+        // automatron >>=4;
+        //     //---------------
+        // new_vegas1=(short)(cadena[19]);
+        // new_vegas2=new_vegas1 & 0x0F;
+        // new_vegas2 <<=4;
+        //
+        // farharbor = new_vegas2 | automatron;
+        //
+        // new_vegas3=new_vegas1& 0xf0;
+        // new_vegas3 <<=4;
+        //
+        // farharbor1= farharbor | new_vegas3;
+        //     //------------------
+        // vault_tec=(short)cadena[18];    //trama[18]
+        // vault_tec1 = vault_tec & 0x0F;
+        // vault_tec1 <<= 12;
+        // farharbor2= vault_tec1 | farharbor1;   //se obtiene el byte alto
+        //
+        // vault_tec2=vault_tec & 0xf0;
+        // vault_tec2<<=12;
+        //
+        // farharbor3= farharbor2 | vault_tec2;
+        //
+        // BAR=farharbor3/100;//*barometro;
         // printf("\n barometro %f\n",BAR);
 
     /*******************************************
@@ -642,7 +676,7 @@ short convermes(unsigned char x,unsigned char y, short out){
     short v1,v2;
     v1 = (short) x;
     v2 = (short) y;
-    v1 >>= 2;
+    v1 <<= 2;
     v2 >>= 6;
     out = (v1 | v2) & 0x0F;
     return out;
@@ -660,7 +694,7 @@ int converaltura(unsigned char x,unsigned char y, int out){
     out = (v1 | v2);
     return out;
 }
- double converlatlon(int h,int hm,int lm,int l,double salida ){
+double converlatlon(int h,int hm,int lm,int l,double salida ){
     int vh, vhm, vlm, vl;
     //double d;
     vh = (int) h;

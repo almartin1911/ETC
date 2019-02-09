@@ -115,7 +115,8 @@ class Controller(object):
         self.load_canvases()
 
         # Setup map
-        self.launch_site = [-16.538275, -68.069592]
+        # self.launch_site = [-16.538275, -68.069592]
+        self.launch_site = [-16.4992521, -68.1338898]    
         self.map = self._mapbox.map
         self.setup_map()
         # Just for testing
